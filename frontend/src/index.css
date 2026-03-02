@@ -1,0 +1,390 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import "tailwindcss";
+
+@plugin "tailwindcss-animate";
+@custom-variant dark (&:is(.dark *));
+
+/* =====================================================
+   VERCEL THEME — from tweakcn.com/r/themes/vercel.json
+   ===================================================== */
+@theme inline {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --font-sans: var(--font-sans-val);
+  --font-mono: var(--font-mono-val);
+  --font-serif: var(--font-serif-val);
+  --radius: var(--radius-val);
+  --tracking-tighter: calc(var(--tracking-normal) - 0.05em);
+  --tracking-tight: calc(var(--tracking-normal) - 0.025em);
+  --tracking-wide: calc(var(--tracking-normal) + 0.025em);
+  --tracking-wider: calc(var(--tracking-normal) + 0.05em);
+  --tracking-widest: calc(var(--tracking-normal) + 0.1em);
+  --shadow-sm: var(--shadow-sm-val);
+  --shadow-md: var(--shadow-md-val);
+  --shadow-lg: var(--shadow-lg-val);
+  --shadow-xl: var(--shadow-xl-val);
+  --shadow-2xl: var(--shadow-2xl-val);
+}
+
+:root {
+  /* Vercel Light Theme */
+  --background: oklch(1 0 0);
+  --foreground: oklch(0 0 0);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0 0 0);
+  --popover: oklch(0.99 0 0);
+  --popover-foreground: oklch(0 0 0);
+  --primary: oklch(0 0 0);
+  --primary-foreground: oklch(1 0 0);
+  --secondary: oklch(0.94 0 0);
+  --secondary-foreground: oklch(0 0 0);
+  --muted: oklch(0.97 0 0);
+  --muted-foreground: oklch(0.44 0 0);
+  --accent: oklch(0.94 0 0);
+  --accent-foreground: oklch(0 0 0);
+  --destructive: oklch(0.63 0.19 23.03);
+  --destructive-foreground: oklch(1 0 0);
+  --border: oklch(0.92 0 0);
+  --input: oklch(0.94 0 0);
+  --ring: oklch(0 0 0);
+
+  /* Fonts */
+  --font-sans-val: 'Geist', 'Inter', system-ui, sans-serif;
+  --font-mono-val: 'Geist Mono', monospace;
+  --font-serif-val: Georgia, serif;
+
+  /* Radius */
+  --radius-val: 0.5rem;
+
+  /* Shadows  */
+  --shadow-sm-val: 0px 1px 2px 0px hsl(0 0% 0% / 0.18), 0px 1px 2px -1px hsl(0 0% 0% / 0.18);
+  --shadow-md-val: 0px 1px 2px 0px hsl(0 0% 0% / 0.18), 0px 2px 4px -1px hsl(0 0% 0% / 0.18);
+  --shadow-lg-val: 0px 1px 2px 0px hsl(0 0% 0% / 0.18), 0px 4px 6px -1px hsl(0 0% 0% / 0.18);
+  --shadow-xl-val: 0px 1px 2px 0px hsl(0 0% 0% / 0.18), 0px 8px 10px -1px hsl(0 0% 0% / 0.18);
+  --shadow-2xl-val: 0px 1px 2px 0px hsl(0 0% 0% / 0.45);
+
+  /* Tracking */
+  --tracking-normal: 0em;
+}
+
+/* =====================================================
+   BASE RESET
+   ===================================================== */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  width: 100%;
+}
+
+@layer base {
+  body {
+    font-family: var(--font-sans-val);
+    background-color: var(--background);
+    color: var(--foreground);
+    -webkit-font-smoothing: antialiased;
+    letter-spacing: var(--tracking-normal);
+  }
+}
+
+/* =====================================================
+   LOGIN PAGE — Vercel-inspired white
+   ===================================================== */
+.auth-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #ffffff;
+  /* Subtle grid pattern like Vercel */
+  background-image:
+    linear-gradient(rgba(0, 0, 0, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 0, 0, 0.04) 1px, transparent 1px);
+  background-size: 40px 40px;
+  padding: 2rem;
+}
+
+.auth-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  max-width: 420px;
+  animation: fadeInUp 0.4s ease both;
+}
+
+.auth-logo {
+  width: 36px;
+  height: 36px;
+  margin-bottom: 0.5rem;
+}
+
+.auth-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #000000;
+  letter-spacing: -0.03em;
+  text-align: center;
+}
+
+.auth-subtitle {
+  font-size: 0.875rem;
+  color: oklch(0.44 0 0);
+  text-align: center;
+  margin-bottom: 0.75rem;
+}
+
+.clerk-widget {
+  width: 100%;
+}
+
+/* =====================================================
+   CLERK COMPONENT OVERRIDES — Vercel Light Theme
+   ===================================================== */
+.cl-rootBox {
+  width: 100% !important;
+}
+
+.cl-card {
+  background: #ffffff !important;
+  border: 1px solid oklch(0.92 0 0) !important;
+  box-shadow: 0px 4px 16px 0px hsl(0 0% 0% / 0.08) !important;
+  border-radius: 12px !important;
+  width: 100% !important;
+}
+
+.cl-headerTitle {
+  color: #000000 !important;
+  font-size: 1.125rem !important;
+  font-weight: 600 !important;
+  letter-spacing: -0.02em !important;
+}
+
+.cl-headerSubtitle {
+  color: oklch(0.44 0 0) !important;
+  font-size: 0.875rem !important;
+}
+
+.cl-formFieldLabel {
+  color: oklch(0.2 0 0) !important;
+  font-size: 0.8125rem !important;
+  font-weight: 500 !important;
+}
+
+.cl-formFieldInput {
+  background: #ffffff !important;
+  border: 1px solid oklch(0.92 0 0) !important;
+  color: #000000 !important;
+  border-radius: 6px !important;
+  font-size: 0.875rem !important;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease !important;
+}
+
+.cl-formFieldInput:focus {
+  border-color: #000000 !important;
+  box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.08) !important;
+  outline: none !important;
+}
+
+.cl-formButtonPrimary {
+  background: #000000 !important;
+  color: #ffffff !important;
+  border-radius: 6px !important;
+  font-size: 0.875rem !important;
+  font-weight: 500 !important;
+  transition: opacity 0.15s ease, transform 0.15s ease !important;
+}
+
+.cl-formButtonPrimary:hover {
+  opacity: 0.85 !important;
+}
+
+.cl-footerActionLink {
+  color: #000000 !important;
+  font-weight: 500 !important;
+}
+
+.cl-footerActionText {
+  color: oklch(0.44 0 0) !important;
+}
+
+.cl-dividerLine {
+  background: oklch(0.92 0 0) !important;
+}
+
+.cl-dividerText {
+  color: oklch(0.44 0 0) !important;
+  font-size: 0.8125rem !important;
+}
+
+.cl-socialButtonsBlockButton {
+  border: 1px solid oklch(0.92 0 0) !important;
+  background: #ffffff !important;
+  border-radius: 6px !important;
+  color: #000000 !important;
+  font-weight: 500 !important;
+  font-size: 0.875rem !important;
+  transition: background 0.15s ease !important;
+}
+
+.cl-socialButtonsBlockButton:hover {
+  background: oklch(0.97 0 0) !important;
+}
+
+/* =====================================================
+   DASHBOARD PAGE — Vercel-inspired white
+   ===================================================== */
+.dashboard-page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: #ffffff;
+}
+
+.dashboard-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 1.5rem;
+  height: 64px;
+  background: #ffffff;
+  border-bottom: 1px solid oklch(0.92 0 0);
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+
+.dashboard-header h1 {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: #000000;
+  letter-spacing: -0.02em;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.user-greeting {
+  font-size: 0.8125rem;
+  color: oklch(0.44 0 0);
+}
+
+.dashboard-nav {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.dashboard-main {
+  flex: 1;
+  padding: 2.5rem 1.5rem;
+  max-width: 1100px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.dashboard-content {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1rem;
+  margin-top: 2rem;
+}
+
+.dashboard-section-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #000000;
+  letter-spacing: -0.03em;
+}
+
+.dashboard-section-subtitle {
+  font-size: 0.875rem;
+  color: oklch(0.44 0 0);
+  margin-top: 0.25rem;
+}
+
+/* Stat cards */
+.stat-card {
+  background: #ffffff;
+  border: 1px solid oklch(0.92 0 0);
+  border-radius: 10px;
+  padding: 1.25rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  transition: box-shadow 0.15s ease;
+}
+
+.stat-card:hover {
+  box-shadow: 0px 4px 16px 0px hsl(0 0% 0% / 0.08);
+}
+
+.stat-label {
+  font-size: 0.8125rem;
+  color: oklch(0.44 0 0);
+  font-weight: 500;
+}
+
+.stat-value {
+  font-size: 1.875rem;
+  font-weight: 700;
+  color: #000000;
+  letter-spacing: -0.04em;
+}
+
+.stat-change {
+  font-size: 0.8125rem;
+  color: oklch(0.44 0 0);
+}
+
+.stat-change.positive {
+  color: #16a349;
+}
+
+/* =====================================================
+   ANIMATIONS
+   ===================================================== */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
