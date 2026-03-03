@@ -1,0 +1,46 @@
+{
+  "invoice_id": "INV-2025-01002",
+  "invoice_date": "2025-03-16",
+  "vendor": {
+    "name": "Tech Solutions Pte Ltd",
+    "address": "10 Science Park Road, Singapore 117684",
+    "country": "SG"
+  },
+  "buyer": {
+    "name": "Bangkok Electronics Co",
+    "address": "123 Sukhumvit Road, Bangkok 10110, Thailand",
+    "country": "TH"
+  },
+  "line_items": [
+    {
+      "item_id": 1,
+      "description": "Smartphone, 128GB, dual SIM",
+      "quantity": 50,
+      "unit": "pieces",
+      "unit_price": 450.00,
+      "amount": 22500.00,
+      "origin_country": "VN"
+    },
+    {
+      "item_id": 2,
+      "description": "Wireless Bluetooth headphones, noise cancelling",
+      "quantity": 100,
+      "unit": "pieces",
+      "unit_price": 85.00,
+      "amount": 8500.00,
+      "origin_country": "CN"
+    },
+    {
+      "item_id": 3,
+      "description": "USB-C charging cable, 2m",
+      "quantity": 500,
+      "unit": "pieces",
+      "unit_price": 3.50,
+      "amount": 1750.00,
+      "origin_country": "CN"
+    }
+  ],
+  "subtotal": 32750.00,
+  "currency": "USD",
+  "notes": "DDP Bangkok"
+}

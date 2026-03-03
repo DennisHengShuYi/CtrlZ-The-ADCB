@@ -1,0 +1,55 @@
+{
+  "invoice_id": "INV-2025-01004",
+  "invoice_date": "2025-03-18",
+  "vendor": {
+    "name": "Global Trading Co",
+    "address": "22 Harbour Road, Hong Kong",
+    "country": "HK"
+  },
+  "buyer": {
+    "name": "Kuala Lumpur Department Store",
+    "address": "100 Jalan Bukit Bintang, 55100 Kuala Lumpur, Malaysia",
+    "country": "MY"
+  },
+  "line_items": [
+    {
+      "item_id": 1,
+      "description": "Stainless steel kitchen knife set, 5 pieces",
+      "quantity": 30,
+      "unit": "sets",
+      "unit_price": 45.00,
+      "amount": 1350.00,
+      "origin_country": "CN"
+    },
+    {
+      "item_id": 2,
+      "description": "Ceramic coffee mug, 350ml, white",
+      "quantity": 200,
+      "unit": "pieces",
+      "unit_price": 5.00,
+      "amount": 1000.00,
+      "origin_country": "CN"
+    },
+    {
+      "item_id": 3,
+      "description": "Plastic storage container with lid, 2L",
+      "quantity": 150,
+      "unit": "pieces",
+      "unit_price": 4.50,
+      "amount": 675.00,
+      "origin_country": "TH"
+    },
+    {
+      "item_id": 4,
+      "description": "Wooden cutting board, bamboo, 30x20cm",
+      "quantity": 80,
+      "unit": "pieces",
+      "unit_price": 12.00,
+      "amount": 960.00,
+      "origin_country": "VN"
+    }
+  ],
+  "subtotal": 3985.00,
+  "currency": "USD",
+  "notes": "Mixed household goods"
+}

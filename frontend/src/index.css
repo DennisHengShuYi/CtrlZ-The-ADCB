@@ -374,6 +374,227 @@ body,
   color: #16a349;
 }
 
+/* Invoice Pre-vet link on dashboard */
+.prevet-dashboard-link {
+  display: inline-block;
+  margin-top: 1.5rem;
+  padding: 0.75rem 1.25rem;
+  background: #000000;
+  color: #ffffff;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  text-decoration: none;
+  transition: opacity 0.15s ease;
+}
+
+.prevet-dashboard-link:hover {
+  opacity: 0.85;
+}
+
+/* =====================================================
+   INVOICE PRE-VET PAGE
+   ===================================================== */
+.invoice-prevet-page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: #ffffff;
+}
+
+.prevet-upload-card {
+  margin-top: 2rem;
+  padding: 2rem;
+  border: 1px solid oklch(0.92 0 0);
+  border-radius: 10px;
+  background: #ffffff;
+}
+
+.prevet-upload-zone {
+  position: relative;
+  border: 2px dashed oklch(0.92 0 0);
+  border-radius: 8px;
+  padding: 2rem;
+  text-align: center;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.prevet-upload-zone:hover {
+  border-color: oklch(0.7 0 0);
+  background: oklch(0.98 0 0);
+}
+
+.prevet-file-input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.prevet-file-label {
+  font-size: 0.875rem;
+  color: oklch(0.44 0 0);
+  cursor: pointer;
+}
+
+.prevet-file-label:has(+ input:focus) {
+  outline: 2px solid #000;
+  outline-offset: 2px;
+}
+
+.prevet-actions {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 1.25rem;
+}
+
+.prevet-submit-btn {
+  padding: 0.5rem 1.25rem;
+  background: #000000;
+  color: #ffffff;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+}
+
+.prevet-submit-btn:hover:not(:disabled) {
+  opacity: 0.85;
+}
+
+.prevet-submit-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.prevet-reset-btn {
+  padding: 0.5rem 1.25rem;
+  background: transparent;
+  color: oklch(0.44 0 0);
+  border: 1px solid oklch(0.92 0 0);
+  border-radius: 6px;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.prevet-reset-btn:hover {
+  background: oklch(0.97 0 0);
+}
+
+.prevet-error {
+  margin-top: 1rem;
+  padding: 0.75rem 1rem;
+  background: oklch(0.95 0.02 25);
+  border: 1px solid oklch(0.85 0.08 25);
+  border-radius: 6px;
+  font-size: 0.875rem;
+  color: oklch(0.45 0.12 25);
+}
+
+.prevet-result {
+  margin-top: 2.5rem;
+  padding: 2rem;
+  border: 1px solid oklch(0.92 0 0);
+  border-radius: 10px;
+  background: #ffffff;
+}
+
+.prevet-result-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+}
+
+.prevet-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  margin-bottom: 1rem;
+  font-size: 0.875rem;
+  color: oklch(0.44 0 0);
+}
+
+.prevet-summary strong {
+  color: #000000;
+}
+
+.prevet-flags {
+  margin-bottom: 1rem;
+  font-size: 0.875rem;
+}
+
+.prevet-flags ul {
+  margin-top: 0.25rem;
+  padding-left: 1.25rem;
+  color: oklch(0.45 0.12 25);
+}
+
+.prevet-line-items {
+  margin-top: 1.5rem;
+}
+
+.prevet-line-items h4 {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  margin-bottom: 0.75rem;
+}
+
+.prevet-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8125rem;
+}
+
+.prevet-table th,
+.prevet-table td {
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+  border-bottom: 1px solid oklch(0.92 0 0);
+}
+
+.prevet-table th {
+  font-weight: 600;
+  color: oklch(0.44 0 0);
+  background: oklch(0.98 0 0);
+}
+
+.prevet-table tr.requires-hitl {
+  background: oklch(0.99 0.02 85);
+}
+
+.prevet-table .desc-text {
+  max-width: 200px;
+  display: inline-block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.prevet-table .ahtn-desc {
+  display: block;
+  font-size: 0.75rem;
+  color: oklch(0.5 0 0);
+  margin-top: 0.25rem;
+}
+
+.prevet-table code {
+  font-family: var(--font-mono-val);
+  font-size: 0.875rem;
+  background: oklch(0.96 0 0);
+  padding: 0.125rem 0.375rem;
+  border-radius: 4px;
+}
+
+.item-flags {
+  margin-top: 0.25rem;
+  padding-left: 1rem;
+  font-size: 0.75rem;
+  color: oklch(0.45 0.12 25);
+}
+
 /* =====================================================
    ANIMATIONS
    ===================================================== */

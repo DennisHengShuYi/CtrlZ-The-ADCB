@@ -1,0 +1,46 @@
+{
+  "invoice_id": "INV-2025-01003",
+  "invoice_date": "2025-03-17",
+  "vendor": {
+    "name": "MediCare Supplies Sdn Bhd",
+    "address": "45 Jalan Medikal, 50490 Kuala Lumpur, Malaysia",
+    "country": "MY"
+  },
+  "buyer": {
+    "name": "Manila Hospital Group",
+    "address": "789 Roxas Boulevard, Manila 1000, Philippines",
+    "country": "PH"
+  },
+  "line_items": [
+    {
+      "item_id": 1,
+      "description": "Disposable nitrile gloves, powder-free, medical grade",
+      "quantity": 1000,
+      "unit": "boxes",
+      "unit_price": 15.00,
+      "amount": 15000.00,
+      "origin_country": "MY"
+    },
+    {
+      "item_id": 2,
+      "description": "Surgical face mask, 3-ply, 50 pcs per box",
+      "quantity": 200,
+      "unit": "boxes",
+      "unit_price": 8.00,
+      "amount": 1600.00,
+      "origin_country": "MY"
+    },
+    {
+      "item_id": 3,
+      "description": "Paracetamol tablets 500mg, 1000 tablets per bottle",
+      "quantity": 50,
+      "unit": "bottles",
+      "unit_price": 12.00,
+      "amount": 600.00,
+      "origin_country": "MY"
+    }
+  ],
+  "subtotal": 17200.00,
+  "currency": "USD",
+  "notes": "Medical supplies - urgent delivery"
+}

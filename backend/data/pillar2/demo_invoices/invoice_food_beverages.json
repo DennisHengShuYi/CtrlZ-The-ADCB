@@ -1,0 +1,46 @@
+{
+  "invoice_id": "INV-2025-01001",
+  "invoice_date": "2025-03-15",
+  "vendor": {
+    "name": "Tropical Foods Sdn Bhd",
+    "address": "88 Industrial Park, 50000 Kuala Lumpur, Malaysia",
+    "country": "MY"
+  },
+  "buyer": {
+    "name": "Jakarta Retail Corp",
+    "address": "Jl. Sudirman No. 50, Jakarta 12190, Indonesia",
+    "country": "ID"
+  },
+  "line_items": [
+    {
+      "item_id": 1,
+      "description": "Palm sugar, organic, 1kg pack",
+      "quantity": 200,
+      "unit": "kg",
+      "unit_price": 4.50,
+      "amount": 900.00,
+      "origin_country": "MY"
+    },
+    {
+      "item_id": 2,
+      "description": "Instant coffee, 3-in-1, halal certified",
+      "quantity": 1000,
+      "unit": "boxes",
+      "unit_price": 12.00,
+      "amount": 12000.00,
+      "origin_country": "MY"
+    },
+    {
+      "item_id": 3,
+      "description": "Canned pineapple slices in syrup",
+      "quantity": 500,
+      "unit": "cans",
+      "unit_price": 2.80,
+      "amount": 1400.00,
+      "origin_country": "MY"
+    }
+  ],
+  "subtotal": 14300.00,
+  "currency": "USD",
+  "notes": "FOB Port Klang"
+}
