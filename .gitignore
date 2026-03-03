@@ -1,0 +1,26 @@
+# Node & Build
+node_modules/
+dist/
+dist-ssr/
+*.log
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+venv/
+.venv/
+*.egg-info/
+
+# Environment (Root Only)
+.env
+.env.*
+!.env.example
+
+# OS & Editors
+.DS_Store
+.vscode/
+.idea/
+
+# Cross-Project
+frontend/dist/
