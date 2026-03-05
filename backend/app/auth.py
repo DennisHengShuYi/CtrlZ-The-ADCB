@@ -3,12 +3,13 @@ Clerk JWT authentication middleware for FastAPI.
 Verifies the Bearer token from the Authorization header using Clerk's JWKS.
 """
 
+import os
 from functools import lru_cache
 from typing import Any
 
 import httpx
 import jwt
-from fastapi import HTTPException, Request, status
+from fastapi import Depends, HTTPException, Request, status
 
 from app.config import CLERK_JWKS_URL
 
@@ -53,6 +54,10 @@ def require_auth(request: Request) -> dict[str, Any]:
     FastAPI dependency that verifies Clerk JWTs.
     Returns the decoded token payload (contains userId, etc.).
     """
+    if os.getenv("AUTH_STRATEGY") == "mock":
+        # Return a consistent test user ID for local development
+        return {"sub": "user_2test_mock_123456789"}
+
     token = _extract_bearer_token(request)
     public_key = _get_public_key(token)
 

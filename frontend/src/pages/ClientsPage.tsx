@@ -83,10 +83,20 @@ export default function ClientsPage() {
     }
   }
 
-  async function handleDelete(id: string) {
-    if (!confirm("Delete this client and all their invoices?")) return;
-    await apiFetch(`/api/clients/${id}`, { method: "DELETE" });
-    loadClients();
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  async function handleDelete(id: string, e?: React.MouseEvent) {
+    if (e) e.stopPropagation();
+    if (!window.confirm("Delete this client and all their invoices?")) return;
+    setDeletingId(id);
+    try {
+      await apiFetch(`/api/clients/${id}`, { method: "DELETE" });
+      setClients(prev => prev.filter(c => c.id !== id));
+    } catch (err: any) {
+      alert(err.message);
+    } finally {
+      setDeletingId(null);
+    }
   }
 
   return (
@@ -143,16 +153,17 @@ export default function ClientsPage() {
                   <td>
                     <div className="action-buttons">
                       <button
-                        className="btn-icon"
+                        className="btn-icon cursor-pointer"
                         title="Edit"
-                        onClick={() => openEdit(c)}
+                        onClick={(e) => { e.stopPropagation(); openEdit(c); }}
                       >
                         <Edit3 size={14} />
                       </button>
                       <button
-                        className="btn-icon btn-icon-danger"
+                        className={`btn-icon btn-icon-danger cursor-pointer ${deletingId === c.id ? 'opacity-50 cursor-not-allowed' : ''}`}
                         title="Delete"
-                        onClick={() => handleDelete(c.id)}
+                        disabled={deletingId === c.id}
+                        onClick={(e) => handleDelete(c.id, e)}
                       >
                         <Trash2 size={14} />
                       </button>

@@ -8,7 +8,7 @@ from decimal import Decimal
 from typing import Optional
 
 from app.supabase_client import supabase
-import asyncio
+from fastapi import BackgroundTasks
 
 
 # ═══════════════════════════════════════════
@@ -99,7 +99,7 @@ def delete_client(client_id: str) -> bool:
 # ═══════════════════════════════════════════
 # Invoices
 # ═══════════════════════════════════════════
-def create_invoice(invoice_data: dict, items: list[dict]) -> dict:
+def create_invoice(invoice_data: dict, items: list[dict], background_tasks: BackgroundTasks = None) -> dict:
     # Calculate total
     total = sum(Decimal(str(item["price"])) * item["quantity"] for item in items)
 
@@ -132,7 +132,8 @@ def create_invoice(invoice_data: dict, items: list[dict]) -> dict:
         if client:
             company_id = client["company_id"]
             # Trigger the auto-evaluation process in the background
-            asyncio.create_task(evaluate_auto_payment(invoice["id"], invoice["client_id"], company_id))
+            if background_tasks:
+                background_tasks.add_task(evaluate_auto_payment, invoice["id"], invoice["client_id"], company_id)
 
     return get_invoice(invoice["id"])
 
@@ -413,9 +414,13 @@ def get_financial_summary(company_id: str) -> dict:
     payments = payments_res.data or []
 
     cash_in = sum(
-        (p["amount"] * p["exchange_rate"]) for p in payments if p["clients"]["type"] in ("customer", None)
+        (Decimal(str(p["amount"])) * Decimal(str(p.get("exchange_rate", 1.0))))
+        for p in payments if p["clients"]["type"] in ("customer", None)
     )
-    cash_out = sum((p["amount"] * p["exchange_rate"]) for p in payments if p["clients"]["type"] == "supplier")
+    cash_out = sum(
+        (Decimal(str(p["amount"])) * Decimal(str(p.get("exchange_rate", 1.0))))
+        for p in payments if p["clients"]["type"] == "supplier"
+    )
     cash_on_hand = cash_in - cash_out
 
     # Fetch all invoices related to this company through clients
@@ -429,9 +434,11 @@ def get_financial_summary(company_id: str) -> dict:
     invoices = invoices_res.data or []
 
     client_pending = [
-        inv for inv in invoices if inv["clients"]["type"] in ("customer", None)
+        inv for inv in invoices if inv.get("type", "issuing") == "issuing"
     ]
-    supplier_pending = [inv for inv in invoices if inv["clients"]["type"] == "supplier"]
+    supplier_pending = [
+        inv for inv in invoices if inv.get("type", "issuing") == "receiving"
+    ]
 
     accounts_receivable = sum(Decimal(str(inv.get("total_amount", 0))) * Decimal(str(inv.get("exchange_rate", 1.0))) for inv in client_pending)
     accounts_payable = sum(Decimal(str(inv.get("total_amount", 0))) * Decimal(str(inv.get("exchange_rate", 1.0))) for inv in supplier_pending)

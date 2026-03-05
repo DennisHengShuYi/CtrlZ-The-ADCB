@@ -4,7 +4,7 @@ Invoice routes — CRUD + PDF download for invoices.
 
 from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks
 from fastapi.responses import StreamingResponse
 import io
 
@@ -50,11 +50,14 @@ def get_single_invoice(invoice_id: str, claims: dict[str, Any] = Depends(require
 @router.post("/", status_code=status.HTTP_201_CREATED)
 def create_new_invoice(
     body: InvoiceCreate,
+    background_tasks: BackgroundTasks,
     claims: dict[str, Any] = Depends(require_auth),
 ):
     _ensure_company(claims)
     items = [item.model_dump() for item in body.items]
-    invoice = create_invoice(body.model_dump(exclude={"items"}), items)
+    invoice = create_invoice(
+        body.model_dump(exclude={"items"}), items, background_tasks=background_tasks
+    )
     return {"invoice": invoice}
 
 

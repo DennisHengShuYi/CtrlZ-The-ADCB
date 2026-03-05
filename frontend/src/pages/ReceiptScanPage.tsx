@@ -140,7 +140,7 @@ export default function ReceiptScanPage() {
             </p>
             <input
               type="file"
-              accept="image/*"
+              accept="image/*,application/pdf"
               className="hidden"
               id="receipt-upload"
               onChange={handleFileChange}
@@ -154,11 +154,18 @@ export default function ReceiptScanPage() {
 
             {file && (
               <div className="mt-6 border border-[oklch(0.92_0_0)] rounded-lg overflow-hidden bg-gray-50 aspect-[3/4] flex items-center justify-center p-2 relative">
-                <img
-                  src={URL.createObjectURL(file)}
-                  alt="Receipt Preview"
-                  className="max-h-full max-w-full object-contain"
-                />
+                {file.type === "application/pdf" ? (
+                  <div className="flex flex-col items-center text-gray-500">
+                    <FileText className="w-16 h-16 mb-2" />
+                    <span className="text-sm font-medium">{file.name}</span>
+                  </div>
+                ) : (
+                  <img
+                    src={URL.createObjectURL(file)}
+                    alt="Receipt Preview"
+                    className="max-h-full max-w-full object-contain"
+                  />
+                )}
               </div>
             )}
 

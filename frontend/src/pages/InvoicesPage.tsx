@@ -109,7 +109,7 @@ export default function InvoicesPage() {
         invoice_number: "",
         date: new Date().toISOString().split("T")[0],
         month: new Date().toISOString().slice(0, 7),
-        type: activeTab,
+        type: "issuing",
         currency: "MYR",
         exchange_rate: 1.0,
       });
@@ -120,10 +120,20 @@ export default function InvoicesPage() {
     }
   }
 
-  async function handleDelete(id: string) {
-    if (!confirm("Delete this invoice?")) return;
-    await apiFetch(`/api/invoices/${id}`, { method: "DELETE" });
-    loadData();
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  async function handleDelete(id: string, e?: React.MouseEvent) {
+    if (e) e.stopPropagation();
+    if (!window.confirm("Delete this invoice?")) return;
+    setDeletingId(id);
+    try {
+      await apiFetch(`/api/invoices/${id}`, { method: "DELETE" });
+      setInvoices(prev => prev.filter(inv => inv.id !== id));
+    } catch (err: any) {
+      alert(err.message);
+    } finally {
+      setDeletingId(null);
+    }
   }
 
   async function handleStatusChange(id: string, status: string) {
@@ -187,12 +197,8 @@ export default function InvoicesPage() {
 
   const totalAmount = items.reduce((sum, i) => sum + i.price * i.quantity, 0);
 
-  const [activeTab, setActiveTab] = useState<"issuing" | "receiving">("issuing");
-
-  // Filter invoices to match the current tab
-  const filteredInvoices = invoices.filter(
-    (inv) => (inv.type || "issuing") === activeTab
-  );
+  // Use a single transaction feed, no filtering by activeTab
+  const filteredInvoices = invoices;
 
   return (
     <div className="page-container">
@@ -202,7 +208,7 @@ export default function InvoicesPage() {
           <p className="page-subtitle">Manage and track all your invoices.</p>
         </div>
         <button className="btn-primary" onClick={() => {
-          setForm({ ...form, type: activeTab });
+          setForm({ ...form, type: "issuing" }); // default type when creating manually
           setShowModal(true);
         }}>
           <Plus size={16} />
@@ -210,21 +216,7 @@ export default function InvoicesPage() {
         </button>
       </div>
 
-      {/* Tabs */}
-      <div className="flex space-x-4 mb-6 border-b border-gray-200">
-        <button
-          className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors ${activeTab === "issuing" ? "border-black text-black" : "border-transparent text-gray-500 hover:text-black hover:border-gray-300"}`}
-          onClick={() => setActiveTab("issuing")}
-        >
-          Issuing (Receivables)
-        </button>
-        <button
-          className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors ${activeTab === "receiving" ? "border-black text-black" : "border-transparent text-gray-500 hover:text-black hover:border-gray-300"}`}
-          onClick={() => setActiveTab("receiving")}
-        >
-          Receiving (Payables)
-        </button>
-      </div>
+      {/* Removed Tabs for Unified Feed */}
 
       {/* Invoice Table */}
       <div className="table-container" style={{ animationDelay: "100ms" }}>
@@ -245,6 +237,7 @@ export default function InvoicesPage() {
               <tr>
                 <th>Invoice #</th>
                 <th>Client</th>
+                <th>Direction</th>
                 <th>Date</th>
                 <th>Amount</th>
                 <th>Status</th>
@@ -256,8 +249,20 @@ export default function InvoicesPage() {
                 <tr key={inv.id} style={{ animationDelay: `${i * 40}ms` }}>
                   <td className="cell-mono">{inv.invoice_number}</td>
                   <td>{inv.client_name || "—"}</td>
+                  <td>
+                    {inv.type === "receiving" ? (
+                      <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800">
+                        Outbound
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
+                        Inbound
+                      </span>
+                    )}
+                  </td>
                   <td>{inv.date}</td>
-                  <td className="cell-amount">
+                  <td className={`font-medium ${inv.type === "receiving" ? "text-red-600" : "text-green-600"}`}>
+                    {inv.type === "receiving" ? "-" : "+"}
                     {new Intl.NumberFormat("en-US", {
                       style: "currency",
                       currency: inv.currency || "USD",
@@ -289,23 +294,24 @@ export default function InvoicesPage() {
                   <td>
                     <div className="action-buttons">
                       <button
-                        className="btn-icon"
+                        className="btn-icon cursor-pointer"
                         title="View PDF"
-                        onClick={() => handleViewPdf(inv.id)}
+                        onClick={(e) => { e.stopPropagation(); handleViewPdf(inv.id); }}
                       >
                         <Eye size={14} />
                       </button>
                       <button
-                        className="btn-icon"
+                        className="btn-icon cursor-pointer"
                         title="Download PDF"
-                        onClick={() => handleDownloadPdf(inv.id, inv.invoice_number)}
+                        onClick={(e) => { e.stopPropagation(); handleDownloadPdf(inv.id, inv.invoice_number); }}
                       >
                         <Download size={14} />
                       </button>
                       <button
-                        className="btn-icon btn-icon-danger"
+                        className={`btn-icon btn-icon-danger cursor-pointer ${deletingId === inv.id ? "opacity-50 cursor-not-allowed" : ""}`}
                         title="Delete"
-                        onClick={() => handleDelete(inv.id)}
+                        disabled={deletingId === inv.id}
+                        onClick={(e) => handleDelete(inv.id, e)}
                       >
                         <Trash2 size={14} />
                       </button>

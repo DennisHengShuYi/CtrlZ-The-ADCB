@@ -274,7 +274,7 @@ export default function OverviewPage() {
                             <div className="flex justify-between text-sm">
                                 <span className="text-gray-500 flex items-center gap-2">
                                     <div className="w-3 h-3 bg-gray-300 rounded-full"></div>{" "}
-                                    Pending Receivables
+                                    Expected Revenue
                                 </span>
                                 <span className="font-medium">
                                     {new Intl.NumberFormat("en-US", { style: "currency", currency: summary.base_currency }).format(totalReceivable)}
@@ -283,7 +283,7 @@ export default function OverviewPage() {
                             <div className="flex justify-between text-sm">
                                 <span className="text-gray-500 flex items-center gap-2">
                                     <div className="w-3 h-3 bg-red-400 rounded-full"></div>{" "}
-                                    Pending Payables
+                                    Upcoming Bills
                                 </span>
                                 <span className="font-medium">
                                     {new Intl.NumberFormat("en-US", { style: "currency", currency: summary.base_currency }).format(totalPayable)}
@@ -319,12 +319,12 @@ export default function OverviewPage() {
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <AlertCard
-                            title="Pending Client Payments"
+                            title="Expected Revenue"
                             items={summary.client_pending}
                             baseCurrency={summary.base_currency}
                         />
                         <AlertCard
-                            title="Pending Supplier Bills"
+                            title="Upcoming Bills"
                             items={summary.supplier_pending}
                             isSupplier={true}
                             baseCurrency={summary.base_currency}
