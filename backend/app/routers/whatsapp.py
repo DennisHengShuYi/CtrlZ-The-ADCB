@@ -1,73 +1,91 @@
 import os
 import json
-from typing import Optional, List
+from typing import Optional, List, Any
 from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel
 from dotenv import load_dotenv
 from pathlib import Path
-
-# NEW: Import the new SDK
 from google import genai
-from google.genai import types
 
-# Load environment variables from the project root
-env_path = Path(__file__).parent.parent.parent.parent / '.env.example'
+# ──────────────────────────────────────────────────────────────
+# Shared environment & Gemini setup
+# ──────────────────────────────────────────────────────────────
+env_path = Path(__file__).parent.parent.parent.parent / '.env'
 load_dotenv(dotenv_path=env_path)
 
-print("🔍 Current working directory:", os.getcwd())
-print("🔍 .env path being used:", env_path)
-print("🔍 Does .env file exist?", env_path.exists())
-print("🔍 GEMINI_API_KEY from os.getenv:", os.getenv("GEMINI_API_KEY"))
-
-from google import genai
-import os
-
-client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
-
-# Configure Gemini with the new SDK
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 if GEMINI_API_KEY:
     try:
-        # NEW: Create a client instead of configuring globally
         client = genai.Client(api_key=GEMINI_API_KEY)
-        # Test the client by listing models (optional)
-        print("✅ Gemini client initialized successfully")
+        print("✅ WhatsApp: Gemini client initialized")
     except Exception as e:
-        print(f"❌ Failed to initialize Gemini client: {e}")
+        print(f"❌ WhatsApp: Failed to initialize Gemini client: {e}")
         client = None
 else:
-    print("⚠️ No Gemini API key found, using fallback only")
+    print("⚠️ WhatsApp: No Gemini API key found, using fallback only")
     client = None
 
-# Optional Supabase
+# Import shared Supabase client
+from app.supabase_client import supabase
+
 USE_SUPABASE = os.getenv("USE_SUPABASE", "false").lower() == "true"
 if USE_SUPABASE:
-    from supabase import create_client
-    supabase = create_client(
-        os.getenv("SUPABASE_URL"),
-        os.getenv("SUPABASE_KEY")
-    )
+    try:
+        supabase.table("whatsapp_messages").select("*").limit(1).execute()
+        print("✅ WhatsApp: Supabase connected")
+    except Exception as e:
+        print(f"❌ WhatsApp: Supabase connection failed: {e}")
+        supabase = None
+else:
+    supabase = None
 
-# Import Clerk auth dependency (adjust path if needed)
 from app.auth import require_auth
 
-router = APIRouter(prefix="/api/whatsapp", tags=["whatsapp"])
+# ──────────────────────────────────────────────────────────────
+# Helper: retrieve product information from Instagram posts
+# (duplicated for simplicity; in a real app you might factor this out)
+# ──────────────────────────────────────────────────────────────
+def get_product_info_from_posts(keywords: Optional[List[str]] = None) -> str:
+    if not USE_SUPABASE or not supabase:
+        return ""
+    try:
+        response = supabase.table("instagram_posts").select("caption").execute()
+        posts = response.data
+        if not posts:
+            return ""
+        if keywords:
+            relevant = []
+            for post in posts:
+                caption = post["caption"].lower()
+                if any(kw.lower() in caption for kw in keywords):
+                    relevant.append(f"- {post['caption']}")
+            if relevant:
+                return "Relevant product info from Instagram:\n" + "\n".join(relevant)
+            return ""
+        else:
+            all_captions = "\n".join([f"- {p['caption']}" for p in posts])
+            return f"Our products (from Instagram):\n{all_captions}"
+    except Exception as e:
+        print(f"Error fetching product info: {e}")
+        return ""
 
-# --- Pydantic models (unchanged) ---
-class WhatsAppMessage(BaseModel):
+# ──────────────────────────────────────────────────────────────
+# PILLAR 1 – CONVERSATIONAL AI (your router)
+# ──────────────────────────────────────────────────────────────
+pillar1_router = APIRouter(prefix="/api/whatsapp-pillar1", tags=["whatsapp-pillar1"])
+
+class Pillar1Message(BaseModel):
     from_number: str
     text: str
     timestamp: Optional[str] = None
 
-class WhatsAppReply(BaseModel):
+class Pillar1Reply(BaseModel):
     intent: str
     mood: str
     reply: str
 
-# --- Helper to fetch conversation history from Supabase (unchanged) ---
 def get_conversation_history(session_id: str, limit: int = 10) -> List[dict]:
-    """Retrieve the last `limit` messages for a given session (from_number)."""
-    if not USE_SUPABASE:
+    if not USE_SUPABASE or not supabase:
         return []
     try:
         response = supabase.table("whatsapp_messages") \
@@ -81,9 +99,8 @@ def get_conversation_history(session_id: str, limit: int = 10) -> List[dict]:
         print(f"Failed to fetch history: {e}")
         return []
 
-# --- Store a message in Supabase (unchanged) ---
 def store_message(session_id: str, role: str, content: str, intent: str = None, mood: str = None):
-    if not USE_SUPABASE:
+    if not USE_SUPABASE or not supabase:
         return
     try:
         supabase.table("whatsapp_messages").insert({
@@ -96,19 +113,14 @@ def store_message(session_id: str, role: str, content: str, intent: str = None, 
     except Exception as e:
         print(f"Failed to store message: {e}")
 
-# --- Fallback keyword logic (unchanged) ---
 def fallback_classify(text: str) -> dict:
     text_lower = text.lower()
-    
-    # Intent
     if any(word in text_lower for word in ["order", "buy", "want", "how to order"]):
         intent = "order"
     elif any(word in text_lower for word in ["pay", "paid", "payment", "transfer"]):
         intent = "payment"
     else:
         intent = "interest"
-    
-    # Mood
     if any(word in text_lower for word in ["thank", "great", "love", "sedap", "best"]):
         mood = "happy"
     elif any(word in text_lower for word in ["why", "how", "what", "when", "where"]):
@@ -117,34 +129,33 @@ def fallback_classify(text: str) -> dict:
         mood = "sad"
     else:
         mood = "neutral"
-    
-    # Generate simple reply based on intent+mood
     if intent == "order":
         reply = "Great! Could you please confirm the quantity and your delivery address?"
     elif intent == "payment":
         reply = "Thank you! You can pay via DuitNow or bank transfer. I'll send you the details."
-    else:  # interest
+    else:
         if mood == "happy":
             reply = "We're glad you like our products! Would you like to place an order? 😊"
         elif mood == "neutral":
             reply = "Do you have any questions about our products? I'm here to help!"
-        else:  # sad
+        else:
             reply = "We're sorry to hear that. Could you share your feedback so we can improve?"
-    
     return {"intent": intent, "mood": mood, "reply": reply}
 
-# --- NEW: Gemini classification with conversation history using google-genai ---
 def classify_with_gemini(text: str, history: List[dict]) -> dict:
     if not client:
         raise Exception("Gemini not configured")
-    
-    # Build conversation history string
     history_str = ""
     for msg in history:
         role = "Customer" if msg["role"] == "user" else "Assistant"
         history_str += f"{role}: {msg['content']}\n"
-    
+
+    # Fetch product info to enrich context
+    product_info = get_product_info_from_posts()  # get all products
+
     prompt = f"""
+{product_info}
+
 You are an AI assistant for a Malaysian food business selling frozen snacks like curry puffs, roti canai, and onde-onde.
 Here is the conversation so far:
 {history_str}
@@ -164,59 +175,109 @@ Rules:
 
 Return ONLY valid JSON.
 """
-    
-    # NEW: Use the client to generate content
-    # Using gemini-1.5-flash (or you can use gemini-2.0-flash if available)
     response = client.models.generate_content(
-        model='gemini-2.5-flash',  # or 'gemini-2.0-flash'
+        model='gemini-2.5-flash',
         contents=prompt
     )
-    
     raw = response.text.strip()
-    # Remove markdown code fences if present
     if raw.startswith("```json"):
         raw = raw[7:-3]
     elif raw.startswith("```"):
         raw = raw[3:-3]
     return json.loads(raw)
 
-# --- Endpoint (unchanged) ---
-@router.post("/webhook", response_model=WhatsAppReply)
-# Removed auth for testing purpose
-async def whatsapp_webhook(message: WhatsAppMessage):
-    """
-    Simulate an incoming WhatsApp webhook.
-    Maintains conversation history via Supabase and returns an AI-generated reply.
-    """
-    session_id = message.from_number  # use phone number as session identifier
-    
-    # Fetch conversation history
+@pillar1_router.post("/webhook", response_model=Pillar1Reply)
+async def pillar1_webhook(message: Pillar1Message):
+    session_id = message.from_number
     history = get_conversation_history(session_id)
-    
     try:
-        # Try Gemini first
-        if client:  # NEW: check client instead of model
+        if client:
             result = classify_with_gemini(message.text, history)
         else:
             result = fallback_classify(message.text)
     except Exception as e:
         print(f"Gemini error, using fallback: {e}")
         result = fallback_classify(message.text)
-    
-    # Store user message
-    store_message(
-        session_id=session_id,
-        role="user",
-        content=message.text,
-        intent=result["intent"],
-        mood=result["mood"]
-    )
-    
-    # Store assistant reply
-    store_message(
-        session_id=session_id,
-        role="assistant",
-        content=result["reply"]
-    )
-    
+    store_message(session_id, "user", message.text, result["intent"], result["mood"])
+    store_message(session_id, "assistant", result["reply"])
     return result
+
+# ──────────────────────────────────────────────────────────────
+# INVOICE PROCESSING (friend's router)
+# ──────────────────────────────────────────────────────────────
+from app.models import WhatsAppMessage  # from friend's models
+from app.ai_service import extract_invoice_data
+from app.invoice_service import (
+    get_company,
+    get_client_by_name,
+    create_invoice,
+    create_pending_invoice,
+    get_pending_invoice,
+    delete_pending_invoice,
+)
+
+invoice_router = APIRouter(prefix="/api/whatsapp", tags=["whatsapp-invoice"])
+
+@invoice_router.post("/webhook")
+async def invoice_webhook(
+    body: WhatsAppMessage,
+    claims: dict[str, Any] = Depends(require_auth),
+):
+    user_id = claims.get("sub", "")
+    company = get_company(user_id)
+    if not company:
+        return {
+            "status": "error",
+            "message": "Please set up your company profile first.",
+        }
+    result = await extract_invoice_data(body.message)
+    if result.get("status") == "error":
+        return {
+            "status": "error",
+            "message": result.get("questions", ["An error occurred."])[0],
+        }
+    if result["status"] == "incomplete":
+        data = result.get("data", {})
+        questions = result.get("questions", [])
+        missing = [k for k, v in data.items() if v is None or v == []]
+        create_pending_invoice(
+            user_id=user_id,
+            raw_message=body.message,
+            extracted_data=data,
+            missing_fields=missing,
+        )
+        return {
+            "status": "incomplete",
+            "questions": questions,
+            "extracted_data": data,
+        }
+    # Status == "complete"
+    data = result["data"]
+    client = get_client_by_name(company["id"], data.get("client_name", ""))
+    if not client:
+        return {
+            "status": "client_not_found",
+            "message": f"Client '{data.get('client_name')}' not found. Would you like to create a new client?",
+            "extracted_data": data,
+        }
+    from datetime import date as date_type
+    invoice_date = data.get("date", str(date_type.today()))
+    month = data.get("month", "")
+    import uuid
+    invoice_number = f"INV-{uuid.uuid4().hex[:8].upper()}"
+    invoice_data = {
+        "client_id": client["id"],
+        "invoice_number": invoice_number,
+        "date": invoice_date,
+        "month": month,
+    }
+    items = data.get("items", [])
+    invoice = create_invoice(invoice_data, items)
+    pending = get_pending_invoice(user_id)
+    if pending:
+        delete_pending_invoice(pending["id"])
+    return {
+        "status": "complete",
+        "message": f"Invoice {invoice_number} created successfully!",
+        "invoice": invoice,
+    }

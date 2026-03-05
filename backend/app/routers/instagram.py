@@ -8,10 +8,10 @@ from pathlib import Path
 from google import genai
 
 # Load environment variables from the project root
-env_path = Path(__file__).parent.parent.parent.parent / '.env.example'
+env_path = Path(__file__).parent.parent.parent.parent / '.env'
 load_dotenv(dotenv_path=env_path)
 
-# Initialize Gemini client (same as in whatsapp.py)
+# Initialize Gemini client
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 if GEMINI_API_KEY:
     try:
@@ -24,14 +24,19 @@ else:
     print("⚠️ Instagram: No Gemini API key found, using fallback only")
     client = None
 
-# Optional Supabase
+# Import shared Supabase client
+from app.supabase_client import supabase
+
 USE_SUPABASE = os.getenv("USE_SUPABASE", "false").lower() == "true"
 if USE_SUPABASE:
-    from supabase import create_client
-    supabase = create_client(
-        os.getenv("SUPABASE_URL"),
-        os.getenv("SUPABASE_KEY")
-    )
+    try:
+        supabase.table("instagram_comments").select("*").limit(1).execute()
+        print("✅ Instagram: Supabase connected")
+    except Exception as e:
+        print(f"❌ Instagram: Supabase connection failed: {e}")
+        supabase = None
+else:
+    supabase = None
 
 # Import Clerk auth dependency (adjust if needed)
 from app.auth import require_auth
@@ -85,6 +90,59 @@ SAMPLE_POSTS = [
     )
 ]
 
+# --- Initialize Instagram posts in Supabase (if empty) ---
+def init_instagram_posts():
+    if not USE_SUPABASE or not supabase:
+        return
+    try:
+        existing = supabase.table("instagram_posts").select("id").limit(1).execute()
+        if not existing.data:
+            for post in SAMPLE_POSTS:
+                supabase.table("instagram_posts").insert({
+                    "id": post.id,
+                    "caption": post.caption,
+                    "likes_count": post.likes,
+                    "comments_count": len(post.comments)
+                }).execute()
+            print("✅ Instagram: Sample posts stored in Supabase")
+    except Exception as e:
+        print(f"❌ Instagram: Failed to store sample posts: {e}")
+
+# Call it at module load
+init_instagram_posts()
+
+# --- Helper: retrieve product information from Instagram posts ---
+def get_product_info_from_posts(keywords: Optional[List[str]] = None) -> str:
+    """
+    Fetch Instagram post captions from Supabase.
+    If keywords provided, return only those matching any keyword.
+    Otherwise return all posts.
+    """
+    if not USE_SUPABASE or not supabase:
+        return ""
+    try:
+        response = supabase.table("instagram_posts").select("caption").execute()
+        posts = response.data
+        if not posts:
+            return ""
+
+        if keywords:
+            relevant = []
+            for post in posts:
+                caption = post["caption"].lower()
+                if any(kw.lower() in caption for kw in keywords):
+                    relevant.append(f"- {post['caption']}")
+            if relevant:
+                return "Relevant product info from Instagram:\n" + "\n".join(relevant)
+            return ""
+        else:
+            # Return all posts
+            all_captions = "\n".join([f"- {p['caption']}" for p in posts])
+            return f"Our products (from Instagram):\n{all_captions}"
+    except Exception as e:
+        print(f"Error fetching product info: {e}")
+        return ""
+
 # --- Helper: analyze comment with Gemini ---
 def analyze_comment_with_gemini(comment_text: str, post_caption: str) -> dict:
     if not client:
@@ -93,8 +151,13 @@ def analyze_comment_with_gemini(comment_text: str, post_caption: str) -> dict:
         suggested_reply = "Thanks for your comment! Let us know if you have any questions."
         product_mentioned = None
         return {"sentiment": sentiment, "suggested_reply": suggested_reply, "product_mentioned": product_mentioned}
-    
+
+    # Fetch product info to enrich context
+    product_info = get_product_info_from_posts()  # get all products
+
     prompt = f"""
+{product_info}
+
 Analyze this Instagram comment on a food business post.
 Post caption: "{post_caption}"
 Comment: "{comment_text}"
@@ -108,7 +171,7 @@ Reply ONLY with JSON, no other text.
 """
     try:
         response = client.models.generate_content(
-            model='gemini-2.5-flash',  # or gemini-2.5-flash
+            model='gemini-2.5-flash',
             contents=prompt
         )
         raw = response.text.strip()
@@ -126,10 +189,9 @@ Reply ONLY with JSON, no other text.
         }
 
 # --- Endpoints ---
-
 @router.get("/feed", response_model=List[Post])
 async def get_feed():
-    """Return simulated Instagram posts."""
+    """Return simulated Instagram posts (from memory, not DB)."""
     return SAMPLE_POSTS
 
 @router.post("/comment/{comment_id}/analyze", response_model=CommentAnalysis)
@@ -139,8 +201,8 @@ async def analyze_comment(comment_id: str):
         for comment in post.comments:
             if comment.id == comment_id:
                 analysis = analyze_comment_with_gemini(comment.text, post.caption)
-                # Optionally store in Supabase
-                if USE_SUPABASE:
+                # Store in Supabase if enabled
+                if USE_SUPABASE and supabase:
                     try:
                         supabase.table("instagram_comments").upsert({
                             "id": comment.id,
@@ -157,19 +219,15 @@ async def analyze_comment(comment_id: str):
 
 @router.get("/engagement", response_model=List[PostEngagement])
 async def get_engagement():
-    """Compute engagement scores for all posts."""
+    """Compute engagement scores for all posts (from memory, not DB)."""
     results = []
     for post in SAMPLE_POSTS:
-        # Simple product mention extraction (hardcoded for demo)
-        # In a real app, you'd use Gemini or a keyword list
         product_mentions = set()
         if "curry puff" in post.caption.lower():
             product_mentions.add("curry puff")
         if "roti canai" in post.caption.lower():
             product_mentions.add("roti canai")
-        
-        score = post.likes * 1 + len(post.comments) * 2  # likes weight 1, comments weight 2
-        
+        score = post.likes * 1 + len(post.comments) * 2
         results.append(PostEngagement(
             post_id=post.id,
             total_likes=post.likes,

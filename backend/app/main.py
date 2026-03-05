@@ -1,10 +1,5 @@
 """
 FastAPI application — main entry point.
-<<<<<<< HEAD
-Mirrors the same routes as the previous Express backend:
-  GET /              → public health-check
-  GET /api/protected → requires valid Clerk JWT
-=======
 Routes:
   GET  /              → public health-check
   GET  /api/protected → requires valid Clerk JWT
@@ -13,7 +8,6 @@ Routes:
   /api/invoices/*     → invoice management + PDF download
   /api/payments/*     → payment management
   /api/whatsapp/*     → WhatsApp webhook
->>>>>>> origin/minhan
 """
 
 from typing import Any
@@ -23,26 +17,19 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.auth import require_auth
 from app.config import PORT
-<<<<<<< HEAD
-from app.routers import whatsapp 
-from app.routers import instagram
+from app.routers import instagram 
 
-app = FastAPI(
-    title="CtrlZ-The-ADCB API",
-    version="0.1.0",
-=======
 from app.routes.companies import router as companies_router
 from app.routes.clients import router as clients_router
 from app.routes.invoices import router as invoices_router
 from app.routes.payments import router as payments_router
-from app.routes.whatsapp import router as whatsapp_router
 from app.routes.currency import router as currency_router
+from app.routers.whatsapp import pillar1_router, invoice_router
 
 app = FastAPI(
     title="CtrlZ-The-ADCB API",
     version="0.2.0",
     description="AI-Powered WhatsApp Invoice Generation System",
->>>>>>> origin/minhan
 )
 
 # CORS — allow the Vite frontend
@@ -54,17 +41,13 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-<<<<<<< HEAD
-=======
 # ── Register routers ──
 app.include_router(companies_router)
 app.include_router(clients_router)
 app.include_router(invoices_router)
 app.include_router(payments_router)
-app.include_router(whatsapp_router)
 app.include_router(currency_router)
 
->>>>>>> origin/minhan
 
 # ──────────────────────────────────────
 # Public route
@@ -82,22 +65,17 @@ def protected_route(claims: dict[str, Any] = Depends(require_auth)):
     user_id = claims.get("sub", "unknown")
     return {"message": f"Authenticated! Your userId is: {user_id}"}
 
-<<<<<<< HEAD
 # ──────────────────────────────────────
 # Include Pillar 1 routers
 # ──────────────────────────────────────
-app.include_router(whatsapp.router)   # <-- add this line
+app.include_router(pillar1_router)
+app.include_router(invoice_router)   # <-- add this line
 app.include_router(instagram.router)
-=======
->>>>>>> origin/minhan
 
 # ──────────────────────────────────────
 # Run with: python -m app.main
 # ──────────────────────────────────────
 if __name__ == "__main__":
     import uvicorn
-<<<<<<< HEAD
-=======
 
->>>>>>> origin/minhan
     uvicorn.run("app.main:app", host="0.0.0.0", port=PORT, reload=True)
