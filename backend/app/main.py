@@ -17,7 +17,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.auth import require_auth
 from app.config import PORT
-from app.routers import instagram 
+from app.routers import instagram, product 
 
 from app.routes.companies import router as companies_router
 from app.routes.clients import router as clients_router
@@ -71,6 +71,7 @@ def protected_route(claims: dict[str, Any] = Depends(require_auth)):
 app.include_router(pillar1_router)
 app.include_router(invoice_router)   # <-- add this line
 app.include_router(instagram.router)
+app.include_router(product.router)
 
 # ──────────────────────────────────────
 # Run with: python -m app.main

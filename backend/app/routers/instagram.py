@@ -1,11 +1,14 @@
 import os
 import json
 from typing import List, Optional
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from dotenv import load_dotenv
 from pathlib import Path
 from google import genai
+from datetime import datetime, timedelta
+from collections import defaultdict
+import calendar
 
 # Load environment variables from the project root
 env_path = Path(__file__).parent.parent.parent.parent / '.env'
@@ -48,6 +51,7 @@ class Comment(BaseModel):
     id: str
     username: str
     text: str
+    sentiment: Optional[str] = None  # may be stored in DB
 
 class Post(BaseModel):
     id: str
@@ -67,27 +71,27 @@ class PostEngagement(BaseModel):
     top_products: List[str]
     engagement_score: int
 
-# --- Simulated data (hardcoded for hackathon) ---
+# --- Sample data for seeding (only used if tables are empty) ---
 SAMPLE_POSTS = [
-    Post(
-        id="post1",
-        caption="New curry puffs! Try our spicy variant 🔥",
-        likes=120,
-        comments=[
-            Comment(id="c1", username="user1", text="Looks delicious!"),
-            Comment(id="c2", username="user2", text="How much for 50 boxes?"),
-            Comment(id="c3", username="user3", text="Expensive la 😕"),
+    {
+        "id": "post1",
+        "caption": "New curry puffs! Try our spicy variant 🔥",
+        "likes_count": 120,
+        "comments": [
+            {"id": "c1", "username": "user1", "text": "Looks delicious!"},
+            {"id": "c2", "username": "user2", "text": "How much for 50 boxes?"},
+            {"id": "c3", "username": "user3", "text": "Expensive la 😕"},
         ]
-    ),
-    Post(
-        id="post2",
-        caption="Roti canai frozen – just heat and eat!",
-        likes=85,
-        comments=[
-            Comment(id="c4", username="user4", text="Where to buy?"),
-            Comment(id="c5", username="user5", text="Sedap! I want 10 packs"),
+    },
+    {
+        "id": "post2",
+        "caption": "Roti canai frozen – just heat and eat!",
+        "likes_count": 85,
+        "comments": [
+            {"id": "c4", "username": "user4", "text": "Where to buy?"},
+            {"id": "c5", "username": "user5", "text": "Sedap! I want 10 packs"},
         ]
-    )
+    }
 ]
 
 # --- Initialize Instagram posts in Supabase (if empty) ---
@@ -98,13 +102,24 @@ def init_instagram_posts():
         existing = supabase.table("instagram_posts").select("id").limit(1).execute()
         if not existing.data:
             for post in SAMPLE_POSTS:
+                # Insert post
                 supabase.table("instagram_posts").insert({
-                    "id": post.id,
-                    "caption": post.caption,
-                    "likes_count": post.likes,
-                    "comments_count": len(post.comments)
+                    "id": post["id"],
+                    "caption": post["caption"],
+                    "likes_count": post["likes_count"],
+                    "comments_count": len(post["comments"])
                 }).execute()
-            print("✅ Instagram: Sample posts stored in Supabase")
+                # Insert its comments
+                for comment in post["comments"]:
+                    supabase.table("instagram_comments").insert({
+                        "id": comment["id"],
+                        "post_id": post["id"],
+                        "username": comment["username"],
+                        "text": comment["text"],
+                        "sentiment": None,
+                        "ai_reply": None
+                    }).execute()
+            print("✅ Instagram: Sample posts and comments stored in Supabase")
     except Exception as e:
         print(f"❌ Instagram: Failed to store sample posts: {e}")
 
@@ -143,7 +158,7 @@ def get_product_info_from_posts(keywords: Optional[List[str]] = None) -> str:
         print(f"Error fetching product info: {e}")
         return ""
 
-# --- Helper: analyze comment with Gemini ---
+# --- Helper: analyze comment with Gemini (unchanged) ---
 def analyze_comment_with_gemini(comment_text: str, post_caption: str) -> dict:
     if not client:
         # Fallback logic if Gemini not available
@@ -189,50 +204,170 @@ Reply ONLY with JSON, no other text.
         }
 
 # --- Endpoints ---
+
 @router.get("/feed", response_model=List[Post])
 async def get_feed():
-    """Return simulated Instagram posts (from memory, not DB)."""
-    return SAMPLE_POSTS
+    """Return Instagram posts with their comments from Supabase."""
+    if not supabase:
+        return []  # fallback empty list
+
+    try:
+        # Fetch all posts
+        posts_resp = supabase.table("instagram_posts").select("*").execute()
+        posts_data = posts_resp.data or []
+
+        # Fetch all comments
+        comments_resp = supabase.table("instagram_comments").select("*").execute()
+        comments_data = comments_resp.data or []
+
+        # Group comments by post_id
+        comments_by_post = {}
+        for c in comments_data:
+            post_id = c.get("post_id")
+            if post_id not in comments_by_post:
+                comments_by_post[post_id] = []
+            comments_by_post[post_id].append({
+                "id": c["id"],
+                "username": c["username"],
+                "text": c["text"],
+                "sentiment": c.get("sentiment")   # may be None
+            })
+
+        # Build response posts
+        result = []
+        for p in posts_data:
+            result.append(Post(
+                id=p["id"],
+                caption=p["caption"],
+                likes=p.get("likes_count", 0),
+                comments=comments_by_post.get(p["id"], [])
+            ))
+        return result
+    except Exception as e:
+        print(f"Error fetching feed: {e}")
+        return []
 
 @router.post("/comment/{comment_id}/analyze", response_model=CommentAnalysis)
 async def analyze_comment(comment_id: str):
     """Analyze a specific comment and generate a reply."""
-    for post in SAMPLE_POSTS:
-        for comment in post.comments:
-            if comment.id == comment_id:
-                analysis = analyze_comment_with_gemini(comment.text, post.caption)
-                # Store in Supabase if enabled
-                if USE_SUPABASE and supabase:
-                    try:
-                        supabase.table("instagram_comments").upsert({
-                            "id": comment.id,
-                            "post_id": post.id,
-                            "username": comment.username,
-                            "text": comment.text,
-                            "sentiment": analysis["sentiment"],
-                            "ai_reply": analysis["suggested_reply"]
-                        }).execute()
-                    except Exception as e:
-                        print(f"Supabase insert failed: {e}")
-                return CommentAnalysis(**analysis)
-    raise HTTPException(status_code=404, detail="Comment not found")
+    # First, fetch the comment from Supabase (or use the seeded data)
+    # Since we don't have a direct endpoint to get a single comment, we'll query
+    if not supabase:
+        raise HTTPException(status_code=503, detail="Database unavailable")
+
+    try:
+        # Fetch the comment
+        comment_resp = supabase.table("instagram_comments").select("*").eq("id", comment_id).execute()
+        if not comment_resp.data:
+            raise HTTPException(status_code=404, detail="Comment not found")
+        comment = comment_resp.data[0]
+
+        # Fetch the post to get caption
+        post_resp = supabase.table("instagram_posts").select("caption").eq("id", comment["post_id"]).execute()
+        post_caption = post_resp.data[0]["caption"] if post_resp.data else ""
+
+        analysis = analyze_comment_with_gemini(comment["text"], post_caption)
+
+        # Update the comment with sentiment and ai_reply
+        supabase.table("instagram_comments").update({
+            "sentiment": analysis["sentiment"],
+            "ai_reply": analysis["suggested_reply"]
+        }).eq("id", comment_id).execute()
+
+        return CommentAnalysis(**analysis)
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Error in analyze_comment: {e}")
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @router.get("/engagement", response_model=List[PostEngagement])
 async def get_engagement():
-    """Compute engagement scores for all posts (from memory, not DB)."""
-    results = []
-    for post in SAMPLE_POSTS:
-        product_mentions = set()
-        if "curry puff" in post.caption.lower():
-            product_mentions.add("curry puff")
-        if "roti canai" in post.caption.lower():
-            product_mentions.add("roti canai")
-        score = post.likes * 1 + len(post.comments) * 2
-        results.append(PostEngagement(
-            post_id=post.id,
-            total_likes=post.likes,
-            total_comments=len(post.comments),
-            top_products=list(product_mentions),
-            engagement_score=score
-        ))
-    return results
+    """Compute engagement scores for all posts from Supabase."""
+    if not supabase:
+        return []
+
+    try:
+        posts_resp = supabase.table("instagram_posts").select("*").execute()
+        posts_data = posts_resp.data or []
+
+        # Predefine product names (you could fetch from products table if exists)
+        # For simplicity, we'll use a static list; but ideally you'd fetch from products DB.
+        product_names = ["curry puff", "roti canai", "onde-onde", "spicy curry puff", "kaya puff"]
+
+        results = []
+        for p in posts_data:
+            # Detect products mentioned in caption
+            caption = p.get("caption", "").lower()
+            mentioned = set()
+            for name in product_names:
+                if name in caption:
+                    mentioned.add(name)
+
+            score = p.get("likes_count", 0) * 1 + p.get("comments_count", 0) * 2
+            results.append(PostEngagement(
+                post_id=p["id"],
+                total_likes=p.get("likes_count", 0),
+                total_comments=p.get("comments_count", 0),
+                top_products=list(mentioned),
+                engagement_score=score
+            ))
+        return results
+    except Exception as e:
+        print(f"Error computing engagement: {e}")
+        return []
+
+@router.get("/engagement-over-time")
+async def get_engagement_over_time(group_by: str = "day"):
+    """
+    Returns engagement (likes + comments) aggregated by day, week, month, quarter, or year.
+    group_by: day, week, month, quarter, year
+    """
+    if not supabase:
+        return []
+
+    try:
+        posts_resp = supabase.table("instagram_posts").select("id, likes_count, comments_count, fetched_at").execute()
+        posts = posts_resp.data or []
+        if not posts:
+            return []
+
+        # Group by the requested time period
+        grouped = defaultdict(int)
+
+        for post in posts:
+            fetched = post.get("fetched_at")
+            if not fetched:
+                continue
+            # Parse timestamp (assuming ISO format)
+            try:
+                dt = datetime.fromisoformat(fetched.replace('Z', '+00:00'))
+            except:
+                continue
+
+            engagement = post.get("likes_count", 0) + post.get("comments_count", 0)
+
+            if group_by == "day":
+                key = dt.strftime("%Y-%m-%d")
+            elif group_by == "week":
+                # ISO week: year-week
+                year, week, _ = dt.isocalendar()
+                key = f"{year}-W{week:02d}"
+            elif group_by == "month":
+                key = dt.strftime("%Y-%m")
+            elif group_by == "quarter":
+                quarter = (dt.month - 1) // 3 + 1
+                key = f"{dt.year}-Q{quarter}"
+            elif group_by == "year":
+                key = dt.strftime("%Y")
+            else:
+                key = dt.strftime("%Y-%m-%d")  # default day
+
+            grouped[key] += engagement
+
+        # Convert to list sorted by date
+        result = [{"date": k, "engagement": v} for k, v in sorted(grouped.items())]
+        return result
+    except Exception as e:
+        print(f"Error in engagement over time: {e}")
+        return []

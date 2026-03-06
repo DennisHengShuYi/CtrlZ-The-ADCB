@@ -433,6 +433,23 @@ body,
   background: #fafafa;
 }
 
+/* Tab container for horizontal scroll */
+.tab-container {
+  display: flex;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  gap: 0.5rem;
+  padding-bottom: 0.5rem;
+  /* optional space for scrollbar */
+}
+
+.tab-container button {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
 /* =====================================================
    PAGE CONTAINERS
    ===================================================== */
@@ -1430,4 +1447,35 @@ body,
   .page-header {
     flex-direction: column;
   }
+}
+
+/* Slick carousel customisation */
+.slick-dots li button:before {
+  color: var(--muted-foreground) !important;
+  opacity: 0.5;
+}
+
+.slick-dots li.slick-active button:before {
+  color: var(--foreground) !important;
+  opacity: 1;
+}
+
+.slick-prev:before,
+.slick-next:before {
+  color: var(--foreground) !important;
+}
+
+/* Custom scrollbar for tabs */
+.overflow-x-auto::-webkit-scrollbar {
+  height: 4px;
+}
+
+.overflow-x-auto::-webkit-scrollbar-track {
+  background: var(--muted);
+  border-radius: 4px;
+}
+
+.overflow-x-auto::-webkit-scrollbar-thumb {
+  background: var(--muted-foreground);
+  border-radius: 4px;
 }
