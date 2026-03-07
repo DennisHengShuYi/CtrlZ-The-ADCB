@@ -1,5 +1,5 @@
 import os
-from typing import List, Optional
+from typing import List, Optional, Any
 from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel
 from dotenv import load_dotenv
@@ -8,20 +8,15 @@ from datetime import datetime
 
 from app.supabase_client import supabase
 from app.auth import require_auth
+from app.invoice_service import get_company
 
 env_path = Path(__file__).parent.parent.parent.parent / '.env'
 load_dotenv(dotenv_path=env_path)
 
 router = APIRouter(prefix="/api/products", tags=["products"])
 
-# Static seed data (your mock products)
-SEED_PRODUCTS = [
-    {"name": "Curry Puff", "inventory": 120, "threshold": 30, "image": "🍛"},
-    {"name": "Roti Canai", "inventory": 85, "threshold": 20, "image": "🥞"},
-    {"name": "Onde-Onde", "inventory": 45, "threshold": 15, "image": "🍡"},
-    {"name": "Spicy Curry Puff", "inventory": 60, "threshold": 25, "image": "🌶️"},
-    {"name": "Kaya Puff", "inventory": 30, "threshold": 10, "image": "🥥"},
-]
+# Static seed data (your mock products) - removed seeding to prevent resetting company_id
+# If you want to use it, you'd need to associate with a specific company_id now.
 
 # --- Pydantic models ---
 class ProductBase(BaseModel):
@@ -29,14 +24,24 @@ class ProductBase(BaseModel):
     inventory: int
     threshold: int
     image: Optional[str] = None
+    price: Optional[float] = 0.0
+    cost_price: Optional[float] = 0.0
+    currency: Optional[str] = "MYR"
+    company_id: Optional[str] = None
+    supplier_id: Optional[str] = None
 
 class ProductCreate(ProductBase):
     pass
 
 class ProductUpdate(BaseModel):
+    name: Optional[str] = None
     inventory: Optional[int] = None
     threshold: Optional[int] = None
     image: Optional[str] = None
+    price: Optional[float] = None
+    cost_price: Optional[float] = None
+    currency: Optional[str] = None
+    supplier_id: Optional[str] = None
 
 class Product(ProductBase):
     id: str
@@ -49,37 +54,6 @@ class MostEnquired(BaseModel):
     name: str
     inquiries: int
 
-# --- Helper: ensure products table has seed data ---
-def seed_products_table():
-    if not supabase:
-        print("⚠️ No Supabase connection, skipping product seed")
-        return
-    try:
-        # Check if table is empty
-        resp = supabase.table("products").select("id").limit(1).execute()
-        if resp.data:
-            return  # already has data
-
-        # Insert seed products
-        for prod in SEED_PRODUCTS:
-            supabase.table("products").insert(prod).execute()
-        print("✅ Seeded products table")
-    except Exception as e:
-        print(f"❌ Failed to seed products: {e}")
-
-# Call seeding at module load
-seed_products_table()
-
-# --- Helper: fetch all products from DB ---
-def get_all_products_from_db() -> List[dict]:
-    if not supabase:
-        return []
-    try:
-        resp = supabase.table("products").select("*").execute()
-        return resp.data
-    except Exception as e:
-        print(f"Error fetching products: {e}")
-        return []
 
 # --- Helper: compute scores (same logic as before, using DB product names) ---
 def get_all_instagram_posts():
@@ -108,8 +82,7 @@ def get_all_whatsapp_messages():
 def count_mentions_in_text(text: str, product_name: str) -> bool:
     return product_name.lower() in text.lower()
 
-def compute_product_scores():
-    products = get_all_products_from_db()
+def compute_product_scores(products):
     if not products:
         return {}, {}
 
@@ -144,20 +117,38 @@ def compute_product_scores():
 
     return product_scores, product_inquiries
 
+
 # --- Endpoints ---
+
 @router.get("", response_model=List[Product])
-async def get_products():
-    """Return all products from the database."""
-    data = get_all_products_from_db()
-    return [Product(**p) for p in data]
+async def get_products(claims: dict[str, Any] = Depends(require_auth)):
+    """Return all products for the current user's company."""
+    if not supabase:
+        return []
+    user_id = claims.get("sub", "")
+    company = get_company(user_id)
+    if not company:
+        return []
+    
+    resp = supabase.table("products").select("*").eq("company_id", company["id"]).execute()
+    return [Product(**p) for p in resp.data]
 
 @router.get("/top", response_model=List[TopProduct])
-async def get_top_products(limit: int = 5):
+async def get_top_products(limit: int = 5, claims: dict[str, Any] = Depends(require_auth)):
     """Return top products by weighted score, including inventory and inquiry count."""
-    products = get_all_products_from_db()
+    if not supabase:
+        return []
+    user_id = claims.get("sub", "")
+    company = get_company(user_id)
+    if not company:
+        return []
+
+    resp = supabase.table("products").select("*").eq("company_id", company["id"]).execute()
+    products = resp.data
     if not products:
         return []
-    scores, inquiries = compute_product_scores()
+    
+    scores, inquiries = compute_product_scores(products)
     result = []
     for prod in products:
         result.append({
@@ -169,17 +160,47 @@ async def get_top_products(limit: int = 5):
     return result[:limit]
 
 @router.get("/most-enquired", response_model=MostEnquired)
-async def get_most_enquired_product():
+async def get_most_enquired_product(claims: dict[str, Any] = Depends(require_auth)):
     """Return the product with the highest WhatsApp inquiry count."""
-    _, inquiries = compute_product_scores()
+    if not supabase:
+         return {"name": "None", "inquiries": 0}
+    user_id = claims.get("sub", "")
+    company = get_company(user_id)
+    if not company:
+        return {"name": "None", "inquiries": 0}
+
+    resp = supabase.table("products").select("*").eq("company_id", company["id"]).execute()
+    products = resp.data
+    _, inquiries = compute_product_scores(products)
     if not inquiries:
         return {"name": "None", "inquiries": 0}
     max_name = max(inquiries.items(), key=lambda x: x[1])[0]
     return {"name": max_name, "inquiries": inquiries[max_name]}
 
+@router.post("", response_model=Product)
+async def create_product(product: ProductCreate, claims: dict[str, Any] = Depends(require_auth)):
+    if not supabase:
+        raise HTTPException(status_code=503, detail="Database not available")
+    
+    user_id = claims.get("sub", "")
+    company = get_company(user_id)
+    if not company:
+        raise HTTPException(status_code=400, detail="Company not found")
+
+    payload = product.dict(exclude_none=True)
+    payload["company_id"] = company["id"]
+
+    try:
+        resp = supabase.table("products").insert(payload).execute()
+        return Product(**resp.data[0])
+    except Exception as e:
+        print(f"Create err: {e}")
+        raise HTTPException(status_code=500, detail="Failed to create product")
+
+
 @router.patch("/{product_id}", response_model=Product)
-async def update_product(product_id: str, updates: ProductUpdate):
-    """Update inventory, threshold, or image of a product."""
+async def update_product(product_id: str, updates: ProductUpdate, claims: dict[str, Any] = Depends(require_auth)):
+    """Update inventory, threshold, price, etc. of a product."""
     if not supabase:
         raise HTTPException(status_code=503, detail="Database not available")
 
@@ -199,3 +220,14 @@ async def update_product(product_id: str, updates: ProductUpdate):
     except Exception as e:
         print(f"Update error: {e}")
         raise HTTPException(status_code=500, detail="Failed to update product")
+
+@router.delete("/{product_id}")
+async def delete_product(product_id: str, claims: dict[str, Any] = Depends(require_auth)):
+    if not supabase:
+        raise HTTPException(status_code=503, detail="Database not available")
+    try:
+        supabase.table("products").delete().eq("id", product_id).execute()
+        return {"status": "success"}
+    except Exception as e:
+        print(f"Delete err: {e}")
+        raise HTTPException(status_code=500, detail="Failed to delete product")

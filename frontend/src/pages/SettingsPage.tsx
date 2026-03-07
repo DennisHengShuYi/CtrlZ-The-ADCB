@@ -34,8 +34,8 @@ export default function SettingsPage() {
         });
         setHasCompany(true);
       }
-    } catch {
-      /* empty */
+    } catch (err: any) {
+      alert(err.message || "Failed to load company settings.");
     }
     setLoading(false);
   }

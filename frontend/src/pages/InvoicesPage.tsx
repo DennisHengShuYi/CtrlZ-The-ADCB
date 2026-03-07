@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { useApiFetch } from "../hooks/useApiFetch";
-import { useAuth } from "@clerk/clerk-react";
 import { FileText, Plus, Download, Trash2, X, Eye } from "lucide-react";
 
 interface InvoiceItem {
@@ -30,7 +29,6 @@ interface Client {
 }
 
 export default function InvoicesPage() {
-  const { getToken } = useAuth();
   const apiFetch = useApiFetch();
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
@@ -48,6 +46,7 @@ export default function InvoicesPage() {
     currency: "MYR",
     exchange_rate: 1.0,
   });
+  const [isCreating, setIsCreating] = useState(false);
   const [items, setItems] = useState<InvoiceItem[]>([
     { description: "", price: 0, quantity: 1 },
   ]);
@@ -69,8 +68,8 @@ export default function InvoicesPage() {
       if (compRes?.company?.base_currency) {
         setBaseCurrency(compRes.company.base_currency);
       }
-    } catch {
-      /* empty */
+    } catch (err: any) {
+      alert(err.message || "Failed to load data.");
     }
     setLoading(false);
   }
@@ -83,8 +82,7 @@ export default function InvoicesPage() {
         return;
       }
       try {
-        const res = await fetch(`http://localhost:8000/api/currency/rate?from=${form.currency}&to=${baseCurrency}`);
-        const data = await res.json();
+        const data = await apiFetch(`/api/currency/rate?from=${form.currency}&to=${baseCurrency}`);
         if (active && data.rate) {
           setForm(f => ({ ...f, exchange_rate: data.rate }));
         }
@@ -98,6 +96,7 @@ export default function InvoicesPage() {
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
+    setIsCreating(true);
     try {
       await apiFetch("/api/invoices/", {
         method: "POST",
@@ -117,13 +116,14 @@ export default function InvoicesPage() {
       loadData();
     } catch (err: Error | any) {
       alert(err.message);
+    } finally {
+      setIsCreating(false);
     }
   }
 
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
-  async function handleDelete(id: string, e?: React.MouseEvent) {
-    if (e) e.stopPropagation();
+  async function handleDelete(id: string) {
     if (!window.confirm("Delete this invoice?")) return;
     setDeletingId(id);
     try {
@@ -145,29 +145,29 @@ export default function InvoicesPage() {
   }
 
   async function handleDownloadPdf(id: string, number: string) {
-    const token = await getToken();
-    const res = await fetch(`http://localhost:8000/api/invoices/${id}/pdf`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    if (!res.ok) return alert("Failed to download");
-    const blob = await res.blob();
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `invoice_${number}.pdf`;
-    a.click();
-    URL.revokeObjectURL(url);
+    try {
+      const blob = await apiFetch(`/api/invoices/${id}/pdf`);
+      if (!blob) return alert("Failed to download");
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `invoice_${number}.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (err: any) {
+      alert(err.message || "Failed to download PDF");
+    }
   }
 
   async function handleViewPdf(id: string) {
-    const token = await getToken();
-    const res = await fetch(`http://localhost:8000/api/invoices/${id}/pdf`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    if (!res.ok) return alert("Failed to open PDF");
-    const blob = await res.blob();
-    const url = URL.createObjectURL(blob);
-    window.open(url, "_blank");
+    try {
+      const blob = await apiFetch(`/api/invoices/${id}/pdf`);
+      if (!blob) return alert("Failed to open PDF");
+      const url = URL.createObjectURL(blob);
+      window.open(url, "_blank");
+    } catch (err: any) {
+      alert(err.message || "Failed to view PDF");
+    }
   }
 
   function addItem() {
@@ -296,14 +296,14 @@ export default function InvoicesPage() {
                       <button
                         className="btn-icon cursor-pointer"
                         title="View PDF"
-                        onClick={(e) => { e.stopPropagation(); handleViewPdf(inv.id); }}
+                        onClick={() => handleViewPdf(inv.id)}
                       >
                         <Eye size={14} />
                       </button>
                       <button
                         className="btn-icon cursor-pointer"
                         title="Download PDF"
-                        onClick={(e) => { e.stopPropagation(); handleDownloadPdf(inv.id, inv.invoice_number); }}
+                        onClick={() => handleDownloadPdf(inv.id, inv.invoice_number)}
                       >
                         <Download size={14} />
                       </button>
@@ -311,7 +311,7 @@ export default function InvoicesPage() {
                         className={`btn-icon btn-icon-danger cursor-pointer ${deletingId === inv.id ? "opacity-50 cursor-not-allowed" : ""}`}
                         title="Delete"
                         disabled={deletingId === inv.id}
-                        onClick={(e) => handleDelete(inv.id, e)}
+                        onClick={() => handleDelete(inv.id)}
                       >
                         <Trash2 size={14} />
                       </button>
@@ -501,8 +501,8 @@ export default function InvoicesPage() {
                 >
                   Cancel
                 </button>
-                <button type="submit" className="btn-primary">
-                  Create Invoice
+                <button type="submit" className="btn-primary" disabled={isCreating}>
+                  {isCreating ? "Creating…" : "Create Invoice"}
                 </button>
               </div>
             </form>

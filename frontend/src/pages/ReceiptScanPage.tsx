@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import { useApiFetch } from "../hooks/useApiFetch";
-import { useAuth } from "@clerk/clerk-react";
 import { UploadCloud, CheckCircle, FileText, XCircle, Eye } from "lucide-react";
 
 export default function ReceiptScanPage() {
@@ -12,7 +11,6 @@ export default function ReceiptScanPage() {
   const [success, setSuccess] = useState(false);
   const [paymentId, setPaymentId] = useState<string | null>(null);
   const [verifiedInvoiceId, setVerifiedInvoiceId] = useState<string | null>(null);
-  const { getToken } = useAuth();
 
   // Use raw fetch since we need to send multipart/form-data
   const authFetch = useApiFetch();
@@ -93,30 +91,30 @@ export default function ReceiptScanPage() {
 
   async function handleDownloadReceipt() {
     if (!paymentId || !verifiedInvoiceId) return;
-    const token = await getToken();
-    const res = await fetch(`http://localhost:8000/api/payments/${paymentId}/pdf?invoice_id=${verifiedInvoiceId}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    if (!res.ok) return alert("Failed to download receipt.");
-    const blob = await res.blob();
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `receipt_${paymentId.substring(0, 8)}.pdf`;
-    a.click();
-    URL.revokeObjectURL(url);
+    try {
+      const blob = await authFetch(`/api/payments/${paymentId}/pdf?invoice_id=${verifiedInvoiceId}`);
+      if (!blob) return alert("Failed to download receipt.");
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `receipt_${paymentId.substring(0, 8)}.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (err: any) {
+      alert(err.message || "Failed to download receipt.");
+    }
   }
 
   async function handleViewReceipt() {
     if (!paymentId || !verifiedInvoiceId) return;
-    const token = await getToken();
-    const res = await fetch(`http://localhost:8000/api/payments/${paymentId}/pdf?invoice_id=${verifiedInvoiceId}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    if (!res.ok) return alert("Failed to open receipt PDF.");
-    const blob = await res.blob();
-    const url = URL.createObjectURL(blob);
-    window.open(url, "_blank");
+    try {
+      const blob = await authFetch(`/api/payments/${paymentId}/pdf?invoice_id=${verifiedInvoiceId}`);
+      if (!blob) return alert("Failed to open receipt PDF.");
+      const url = URL.createObjectURL(blob);
+      window.open(url, "_blank");
+    } catch (err: any) {
+      alert(err.message || "Failed to open receipt PDF.");
+    }
   }
 
   return (

@@ -33,6 +33,7 @@ class ClientCreate(BaseModel):
     company_id: Optional[str] = None
     name: str
     contact_info: Optional[str] = None
+    phone_number: Optional[str] = None
     business_reg: Optional[str] = None
     person_in_charge: Optional[str] = None
     type: Optional[str] = Field(None, pattern="^(customer|supplier)$")

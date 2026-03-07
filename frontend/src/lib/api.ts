@@ -2,7 +2,7 @@
  * API utility — makes authenticated requests to the FastAPI backend.
  */
 
-const API_BASE = "http://localhost:8000";
+const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:8000";
 
 export async function apiFetch(
   path: string,
@@ -19,8 +19,12 @@ export async function apiFetch(
     headers["Content-Type"] = "application/json";
   }
 
-  if (token) {
+  const isMockMode = localStorage.getItem("Mock-Mode") === "true";
+  if (token && !isMockMode) {
     headers.Authorization = `Bearer ${token}`;
+  } else if (isMockMode) {
+    // Optionally supply a mock user id if your backend expects it locally
+    headers.Authorization = "Bearer MOCK_TOKEN";
   }
 
   const res = await fetch(`${API_BASE}${path}`, {
@@ -34,5 +38,12 @@ export async function apiFetch(
   }
 
   if (res.status === 204) return null;
+
+  // automatically parse PDF payloads into a blob for easy frontend downloading
+  const contentType = res.headers.get("content-type") || "";
+  if (contentType.includes("application/pdf")) {
+    return res.blob();
+  }
+
   return res.json();
 }

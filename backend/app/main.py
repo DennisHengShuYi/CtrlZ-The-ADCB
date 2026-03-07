@@ -19,11 +19,11 @@ from app.auth import require_auth
 from app.config import PORT
 from app.routers import instagram, product 
 
-from app.routes.companies import router as companies_router
-from app.routes.clients import router as clients_router
-from app.routes.invoices import router as invoices_router
-from app.routes.payments import router as payments_router
-from app.routes.currency import router as currency_router
+from app.routers.companies import router as companies_router
+from app.routers.clients import router as clients_router
+from app.routers.invoices import router as invoices_router
+from app.routers.payments import router as payments_router
+from app.routers.currency import router as currency_router
 from app.routers.whatsapp import pillar1_router, invoice_router
 
 app = FastAPI(
@@ -73,10 +73,11 @@ app.include_router(invoice_router)   # <-- add this line
 app.include_router(instagram.router)
 app.include_router(product.router)
 
+
 # ──────────────────────────────────────
 # Run with: python -m app.main
 # ──────────────────────────────────────
 if __name__ == "__main__":
     import uvicorn
 
-    uvicorn.run("app.main:app", host="0.0.0.0", port=PORT, reload=True)
+    uvicorn.run("app.main:app", host="0.0.0.0", port=PORT, reload=True, reload_dirs=["app"])

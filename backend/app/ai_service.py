@@ -51,34 +51,41 @@ def _extract_json(text: str) -> dict:
 
     raise ValueError(f"Could not extract JSON from AI response: {text[:200]}")
 
-SYSTEM_PROMPT = """You are an expert invoice assistant for FinanceFlow.
-Your task is to extract invoice details from WhatsApp messages.
+def get_system_prompt():
+    from datetime import date
+    today = date.today().isoformat()
+    return f"""You are an expert AI sales and invoice assistant.
+Your task is to detect order intent and extract details from WhatsApp messages.
 
-Required Fields:
-1. Client Name (e.g., "ABC Corp")
-2. Invoice Date (YYYY-MM-DD format)
-3. Invoice Month (e.g., "March 2024")
-4. Currency (e.g., "MYR", "USD", "EUR", "SGD", "IDR", "PHP", "THB", "VND", "AED" - default to "MYR" if not mentioned. Detect RM/Ringgit as MYR, S$ as SGD, Rp as IDR, ₱ as PHP, ฿ as THB, ₫ as VND)
-5. Items: List of objects containing { description, price, quantity }
+Current Date: {today} (Use this for date and month if not mentioned)
 
-Rules:
-- If a field is missing or ambiguous, you MUST identify it.
-- If the message says "ABC Corp 5 laptops at 1000 each", extract Client: "ABC Corp", Item: "laptops", Qty: 5, Price: 1000.
-- If the user only says "I want to create an invoice for ABC Corp for 5 laptops", ask for the price.
-- Always return valid JSON only, no markdown formatting.
+Required Fields for an Order:
+1. item_name (e.g., "Curry Puffs")
+2. quantity (e.g., 5)
+(Note: client_name and price are optional because they are managed by the system.)
+
+Rules for Order Intent & Data Collection:
+- Look for `item_name` ("description") and `quantity`.
+- If the user wants to order something but is missing `quantity`, set status to "incomplete".
+- Generate a friendly, conversational question in the `questions` array asking for the missing quantity (e.g., "I see you want to order Curry Puffs! How many would you like to get?").
+- If all required info (item and quantity) is present, set status to "complete" and generate the `items` array.
+- For `price` and `client_name`, return null if not explicitly provided in the text.
+- Return valid JSON only, no markdown formatting.
 
 Output Format (JSON):
-{
+{{
   "status": "complete" | "incomplete",
-  "data": {
+  "data": {{
     "client_name": string | null,
     "date": string | null,
     "month": string | null,
-    "currency": string | null,
-    "items": Array<{ "description": string, "price": number, "quantity": number }>
-  },
-  "questions": string[]
-}"""
+    "currency": "MYR",
+    "items": [
+      {{ "description": string, "price": number | null, "quantity": number }}
+    ]
+  }},
+  "questions": ["friendly follow-up question here"]
+}}"""
 
 
 async def extract_invoice_data(message: str) -> dict:
@@ -90,7 +97,7 @@ async def extract_invoice_data(message: str) -> dict:
             model="gemini-2.0-flash",
             contents=message,
             config=types.GenerateContentConfig(
-                system_instruction=SYSTEM_PROMPT,
+                system_instruction=get_system_prompt(),
                 temperature=0.1,
             ),
         )

@@ -1,11 +1,12 @@
 import { useState, useEffect } from "react";
 import { useApiFetch } from "../hooks/useApiFetch";
-import { Users, Plus, Trash2, X, Edit3 } from "lucide-react";
+import { Users, UserPlus, Trash2, X, Edit3 } from "lucide-react";
 
 interface Client {
   id: string;
   company_id: string;
   name: string;
+  phone_number: string | null;
   contact_info: string | null;
   business_reg: string | null;
   person_in_charge: string | null;
@@ -15,6 +16,7 @@ interface Client {
 
 const EMPTY_FORM = {
   name: "",
+  phone_number: "",
   contact_info: "",
   business_reg: "",
   person_in_charge: "",
@@ -38,8 +40,8 @@ export default function ClientsPage() {
     try {
       const res = await apiFetch("/api/clients/");
       setClients(res?.clients || []);
-    } catch {
-      /* empty */
+    } catch (err: any) {
+      alert(err.message || "Failed to load clients.");
     }
     setLoading(false);
   }
@@ -54,6 +56,7 @@ export default function ClientsPage() {
     setEditId(c.id);
     setForm({
       name: c.name,
+      phone_number: c.phone_number || "",
       contact_info: c.contact_info || "",
       business_reg: c.business_reg || "",
       person_in_charge: c.person_in_charge || "",
@@ -64,6 +67,7 @@ export default function ClientsPage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    setIsSubmitting(true);
     try {
       if (editId) {
         await apiFetch(`/api/clients/${editId}`, {
@@ -80,13 +84,15 @@ export default function ClientsPage() {
       loadClients();
     } catch (err: Error | any) {
       alert(err.message);
+    } finally {
+      setIsSubmitting(false);
     }
   }
 
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
-  async function handleDelete(id: string, e?: React.MouseEvent) {
-    if (e) e.stopPropagation();
+  async function handleDelete(id: string) {
     if (!window.confirm("Delete this client and all their invoices?")) return;
     setDeletingId(id);
     try {
@@ -107,7 +113,7 @@ export default function ClientsPage() {
           <p className="page-subtitle">Manage your customers and suppliers.</p>
         </div>
         <button className="btn-primary" onClick={openCreate}>
-          <Plus size={16} />
+          <UserPlus size={16} />
           Add Client
         </button>
       </div>
@@ -130,6 +136,7 @@ export default function ClientsPage() {
               <tr>
                 <th>Name</th>
                 <th>Type</th>
+                <th>Phone</th>
                 <th>Contact</th>
                 <th>Person in Charge</th>
                 <th>Reg. No.</th>
@@ -147,15 +154,16 @@ export default function ClientsPage() {
                       {c.type || "customer"}
                     </span>
                   </td>
+                  <td>{c.phone_number || "—"}</td>
                   <td>{c.contact_info || "—"}</td>
                   <td>{c.person_in_charge || "—"}</td>
                   <td className="cell-mono">{c.business_reg || "—"}</td>
                   <td>
                     <div className="action-buttons">
                       <button
-                        className="btn-icon cursor-pointer"
+                        className="btn-icon"
                         title="Edit"
-                        onClick={(e) => { e.stopPropagation(); openEdit(c); }}
+                        onClick={() => openEdit(c)}
                       >
                         <Edit3 size={14} />
                       </button>
@@ -163,7 +171,7 @@ export default function ClientsPage() {
                         className={`btn-icon btn-icon-danger cursor-pointer ${deletingId === c.id ? 'opacity-50 cursor-not-allowed' : ''}`}
                         title="Delete"
                         disabled={deletingId === c.id}
-                        onClick={(e) => handleDelete(c.id, e)}
+                        onClick={() => handleDelete(c.id)}
                       >
                         <Trash2 size={14} />
                       </button>
@@ -178,7 +186,7 @@ export default function ClientsPage() {
 
       {/* Modal */}
       {showModal && (
-        <div className="modal-overlay" onClick={() => setShowModal(false)}>
+        <div className="modal-overlay" onClick={(e) => { if (e.target === e.currentTarget) setShowModal(false); }}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <h2>{editId ? "Edit Client" : "Add Client"}</h2>
@@ -208,7 +216,17 @@ export default function ClientsPage() {
                   </select>
                 </div>
                 <div className="form-field">
-                  <label>Contact Info</label>
+                  <label>Phone Number</label>
+                  <input
+                    placeholder="+60123456789"
+                    value={form.phone_number}
+                    onChange={(e) =>
+                      setForm({ ...form, phone_number: e.target.value })
+                    }
+                  />
+                </div>
+                <div className="form-field">
+                  <label>Email / Contact Info</label>
                   <input
                     placeholder="email@example.com"
                     value={form.contact_info}
@@ -246,8 +264,8 @@ export default function ClientsPage() {
                 >
                   Cancel
                 </button>
-                <button type="submit" className="btn-primary">
-                  {editId ? "Save Changes" : "Add Client"}
+                <button type="submit" className="btn-primary" disabled={isSubmitting}>
+                  {isSubmitting ? "Saving…" : editId ? "Save Changes" : "Add Client"}
                 </button>
               </div>
             </form>

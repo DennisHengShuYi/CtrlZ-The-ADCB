@@ -9,42 +9,58 @@ import PaymentsPage from "./pages/PaymentsPage";
 import WhatsAppPage from "./pages/WhatsAppPage";
 import SettingsPage from "./pages/SettingsPage";
 import ReceiptScanPage from "./pages/ReceiptScanPage";
+import InventoryPage from "./pages/InventoryPage";
+
+const isMockMode = localStorage.getItem("Mock-Mode") === "true";
+
+function ProtectedRoute({ children }: { children: React.ReactNode }) {
+  if (isMockMode) return <>{children}</>;
+  return (
+    <>
+      <SignedIn>{children}</SignedIn>
+      <SignedOut>
+        <Navigate to="/" replace />
+      </SignedOut>
+    </>
+  );
+}
+
+function PublicRoute({ children }: { children: React.ReactNode }) {
+  if (isMockMode) return <Navigate to="/dashboard" replace />;
+  return (
+    <>
+      <SignedIn>
+        <Navigate to="/dashboard" replace />
+      </SignedIn>
+      <SignedOut>{children}</SignedOut>
+    </>
+  );
+}
 
 export default function App() {
   return (
     <Routes>
-      {/* Public route — redirects to dashboard if already signed in */}
       <Route
         path="/"
         element={
-          <>
-            <SignedIn>
-              <Navigate to="/dashboard" replace />
-            </SignedIn>
-            <SignedOut>
-              <LoginPage />
-            </SignedOut>
-          </>
+          <PublicRoute>
+            <LoginPage />
+          </PublicRoute>
         }
       />
 
-      {/* Protected dashboard routes with sidebar layout */}
       <Route
         path="/dashboard"
         element={
-          <>
-            <SignedIn>
-              <DashboardLayout />
-            </SignedIn>
-            <SignedOut>
-              <Navigate to="/" replace />
-            </SignedOut>
-          </>
+          <ProtectedRoute>
+            <DashboardLayout />
+          </ProtectedRoute>
         }
       >
         <Route index element={<OverviewPage />} />
         <Route path="invoices" element={<InvoicesPage />} />
         <Route path="clients" element={<ClientsPage />} />
+        <Route path="inventory" element={<InventoryPage />} />
         <Route path="payments" element={<PaymentsPage />} />
         <Route path="scan-receipt" element={<ReceiptScanPage />} />
         <Route path="whatsapp" element={<WhatsAppPage />} />

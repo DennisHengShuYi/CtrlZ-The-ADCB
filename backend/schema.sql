@@ -27,6 +27,7 @@ CREATE TABLE IF NOT EXISTS clients (
   company_id UUID REFERENCES user_companies(id) ON DELETE CASCADE,
   name TEXT NOT NULL,
   contact_info TEXT,
+  phone_number TEXT,
   business_reg TEXT,
   person_in_charge TEXT,
   type TEXT CHECK (type IN ('customer', 'supplier')),

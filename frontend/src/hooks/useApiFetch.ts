@@ -10,7 +10,11 @@ export function useApiFetch() {
 
   const authenticatedFetch = useCallback(
     async (path: string, options: RequestInit = {}) => {
-      const token = await getToken();
+      const isMockMode = localStorage.getItem("Mock-Mode") === "true";
+      let token = null;
+      if (!isMockMode) {
+        token = await getToken();
+      }
       return apiFetch(path, options, token);
     },
     [getToken],

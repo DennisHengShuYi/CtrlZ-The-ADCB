@@ -8,7 +8,7 @@ from decimal import Decimal
 from typing import Optional
 
 from app.supabase_client import supabase
-from fastapi import BackgroundTasks
+from fastapi import BackgroundTasks, HTTPException
 
 
 # ═══════════════════════════════════════════
@@ -17,7 +17,9 @@ from fastapi import BackgroundTasks
 def create_company(user_id: str, data: dict) -> dict:
     payload = {**data, "user_id": user_id}
     result = supabase.table("user_companies").insert(payload).execute()
-    return result.data[0] if result.data else {}
+    if not result.data:
+        raise HTTPException(status_code=400, detail="Database operation failed or returned no data.")
+    return result.data[0]
 
 
 def get_company(user_id: str) -> Optional[dict]:
@@ -35,7 +37,9 @@ def update_company(company_id: str, data: dict) -> dict:
     result = (
         supabase.table("user_companies").update(data).eq("id", company_id).execute()
     )
-    return result.data[0] if result.data else {}
+    if not result.data:
+        raise HTTPException(status_code=400, detail="Database operation failed or returned no data.")
+    return result.data[0]
 
 
 # ═══════════════════════════════════════════
@@ -43,7 +47,9 @@ def update_company(company_id: str, data: dict) -> dict:
 # ═══════════════════════════════════════════
 def create_client(data: dict) -> dict:
     result = supabase.table("clients").insert(data).execute()
-    return result.data[0] if result.data else {}
+    if not result.data:
+        raise HTTPException(status_code=400, detail="Database operation failed or returned no data.")
+    return result.data[0]
 
 
 def get_clients(company_id: str) -> list[dict]:
@@ -69,6 +75,18 @@ def get_client_by_name(company_id: str, name: str) -> Optional[dict]:
     return result.data[0] if result.data else None
 
 
+def get_client_by_phone(company_id: str, phone_number: str) -> Optional[dict]:
+    result = (
+        supabase.table("clients")
+        .select("*")
+        .eq("company_id", company_id)
+        .eq("phone_number", phone_number)
+        .limit(1)
+        .execute()
+    )
+    return result.data[0] if result.data else None
+
+
 def get_client(client_id: str) -> Optional[dict]:
     result = (
         supabase.table("clients").select("*").eq("id", client_id).limit(1).execute()
@@ -78,7 +96,9 @@ def get_client(client_id: str) -> Optional[dict]:
 
 def update_client(client_id: str, data: dict) -> dict:
     result = supabase.table("clients").update(data).eq("id", client_id).execute()
-    return result.data[0] if result.data else {}
+    if not result.data:
+        raise HTTPException(status_code=400, detail="Database operation failed or returned no data.")
+    return result.data[0]
 
 
 def delete_client(client_id: str) -> bool:
@@ -110,11 +130,13 @@ def create_invoice(invoice_data: dict, items: list[dict], background_tasks: Back
         "month": invoice_data["month"],
         "currency": invoice_data.get("currency", "MYR"),
         "type": invoice_data.get("type", "issuing"),
-        "exchange_rate": float(invoice_data.get("exchange_rate", 1.0)),
-        "total_amount": float(total),
+        "exchange_rate": str(Decimal(str(invoice_data.get("exchange_rate", 1.0)))),
+        "total_amount": str(total),
     }
 
     result = supabase.table("invoices").insert(payload).execute()
+    if not result.data:
+        raise HTTPException(status_code=400, detail="Failed to create invoice.")
     invoice = result.data[0]
 
     # Insert items
@@ -122,7 +144,7 @@ def create_invoice(invoice_data: dict, items: list[dict], background_tasks: Back
         item_payload = {
             "invoice_id": invoice["id"],
             "description": item["description"],
-            "price": float(item["price"]),
+            "price": str(Decimal(str(item["price"]))),
             "quantity": item["quantity"],
         }
         supabase.table("invoice_items").insert(item_payload).execute()
@@ -194,7 +216,9 @@ def update_invoice_status(invoice_id: str, status: str) -> dict:
         .eq("id", invoice_id)
         .execute()
     )
-    return result.data[0] if result.data else {}
+    if not result.data:
+        raise HTTPException(status_code=400, detail="Database operation failed or returned no data.")
+    return result.data[0]
 
 
 def delete_invoice(invoice_id: str) -> bool:
@@ -210,15 +234,17 @@ def delete_invoice(invoice_id: str) -> bool:
 def create_payment(data: dict) -> dict:
     payload = {
         "client_id": data["client_id"],
-        "amount": float(data["amount"]),
+        "amount": str(Decimal(str(data["amount"]))),
         "date": str(data["date"]),
         "method": data.get("method"),
         "notes": data.get("notes"),
         "currency": data.get("currency", "MYR"),
-        "exchange_rate": float(data.get("exchange_rate", 1.0)),
+        "exchange_rate": str(Decimal(str(data.get("exchange_rate", 1.0)))),
     }
     result = supabase.table("payments").insert(payload).execute()
-    return result.data[0] if result.data else {}
+    if not result.data:
+        raise HTTPException(status_code=400, detail="Database operation failed or returned no data.")
+    return result.data[0]
 
 
 def get_payments(company_id: str) -> list[dict]:
@@ -293,9 +319,9 @@ def get_net_balance(client_id: str, month: str) -> dict:
         "client_id": client_id,
         "client_name": client["name"] if client else "Unknown",
         "month": month,
-        "total_invoiced": float(total_invoiced),
-        "total_paid": float(total_paid),
-        "net_balance": float(total_invoiced - total_paid),
+        "total_invoiced": str(total_invoiced),
+        "total_paid": str(total_paid),
+        "net_balance": str(total_invoiced - total_paid),
     }
 
 
@@ -312,7 +338,9 @@ def create_pending_invoice(
         "missing_fields": missing_fields,
     }
     result = supabase.table("pending_invoices").insert(payload).execute()
-    return result.data[0] if result.data else {}
+    if not result.data:
+        raise HTTPException(status_code=400, detail="Database operation failed or returned no data.")
+    return result.data[0]
 
 
 def get_pending_invoice(user_id: str) -> Optional[dict]:
@@ -396,9 +424,9 @@ def get_financial_summary(company_id: str) -> dict:
 
     if not clients:
         return {
-            "cash_on_hand": 0,
-            "total_assets": 0,
-            "available_for_expenses": 0,
+            "cash_on_hand": "0",
+            "total_assets": "0",
+            "available_for_expenses": "0",
             "base_currency": base_currency,
             "client_pending": [],
             "supplier_pending": [],
@@ -447,9 +475,9 @@ def get_financial_summary(company_id: str) -> dict:
     available_for_expenses = cash_on_hand - accounts_payable
 
     return {
-        "cash_on_hand": float(cash_on_hand),
-        "total_assets": float(total_assets),
-        "available_for_expenses": float(available_for_expenses),
+        "cash_on_hand": str(cash_on_hand),
+        "total_assets": str(total_assets),
+        "available_for_expenses": str(available_for_expenses),
         "base_currency": base_currency,
         "client_pending": client_pending,
         "supplier_pending": supplier_pending,
@@ -467,44 +495,42 @@ async def evaluate_auto_payment(invoice_id: str, client_id: str, company_id: str
 
     # Get financial summary
     summary = get_financial_summary(company_id)
-    cash_on_hand = summary["cash_on_hand"]
-    available_for_expenses = summary["available_for_expenses"]
+    cash_on_hand = Decimal(str(summary["cash_on_hand"]))
+    available_for_expenses = Decimal(str(summary["available_for_expenses"]))
     base_currency = summary["base_currency"]
 
-    inv_amount = float(invoice["total_amount"])
+    inv_amount = Decimal(str(invoice["total_amount"]))
     inv_currency = invoice["currency"]
     inv_desc = "Auto-evaluating newly received invoice"
     supplier_name = invoice.get("client_name", "Supplier")
-    exchange_rate = float(invoice.get("exchange_rate", 1.0))
+    exchange_rate = Decimal(str(invoice.get("exchange_rate", 1.0)))
     inv_amount_base = inv_amount * exchange_rate
 
-    # If the invoice total amount is greater than cash on hand, abort to prevent negative balances
     if inv_amount_base > cash_on_hand:
         print(f"Auto-payment aborted: insufficient cash for invoice {invoice_id}")
         return
         
     ai_decision = await evaluate_supplier_bill(
-        amount=inv_amount,
+        amount=float(inv_amount),
         currency=inv_currency,
         description=inv_desc,
         supplier_name=supplier_name,
-        cash_on_hand=cash_on_hand,
-        available_for_expenses=available_for_expenses,
+        cash_on_hand=float(cash_on_hand),
+        available_for_expenses=float(available_for_expenses),
         base_currency=base_currency,
     )
 
     if ai_decision.get("approve"):
-        # Automatically call create_payment using invoice total
         reason = ai_decision.get("reason", "Approved by AI based on cash flow.")
         payment_payload = {
             "invoice_id": invoice_id,
             "client_id": client_id,
-            "amount": inv_amount,
+            "amount": str(inv_amount),
             "date": str(date.today()),
             "method": "AI Auto-Pay",
-            "notes": f"🤖 Auto-paid by AI: {reason}",
+            "notes": f"Auto-paid by AI: {reason}",
             "currency": inv_currency,
-            "exchange_rate": exchange_rate,
+            "exchange_rate": str(exchange_rate),
         }
         create_payment(payment_payload)
         update_invoice_status(invoice_id, "paid")

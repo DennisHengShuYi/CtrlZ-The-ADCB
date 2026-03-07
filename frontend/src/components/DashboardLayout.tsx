@@ -8,32 +8,22 @@ import {
   Settings,
   MessageSquare,
   Scan,
+  Package,
   ChevronRight,
 } from "lucide-react";
+import { VercelLogo } from "./ui/VercelLogo";
 
 const NAV_ITEMS = [
   { to: "/dashboard", icon: LayoutDashboard, label: "Overview" },
   { to: "/dashboard/invoices", icon: FileText, label: "Invoices" },
   { to: "/dashboard/clients", icon: Users, label: "Clients" },
+  { to: "/dashboard/inventory", icon: Package, label: "Inventory" },
   { to: "/dashboard/payments", icon: CreditCard, label: "Payments" },
   { to: "/dashboard/scan-receipt", icon: Scan, label: "Scan Receipt" },
   { to: "/dashboard/whatsapp", icon: MessageSquare, label: "WhatsApp" },
   { to: "/dashboard/settings", icon: Settings, label: "Settings" },
 ];
 
-function VercelLogo() {
-  return (
-    <svg
-      width="20"
-      height="18"
-      viewBox="0 0 74 64"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <path d="M37.0001 0L74.0001 64H0L37.0001 0Z" fill="black" />
-    </svg>
-  );
-}
 
 export default function DashboardLayout() {
   const { user } = useUser();

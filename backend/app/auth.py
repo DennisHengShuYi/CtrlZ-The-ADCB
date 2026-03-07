@@ -11,7 +11,10 @@ import httpx
 import jwt
 from fastapi import Depends, HTTPException, Request, status
 
-from app.config import CLERK_JWKS_URL
+from app.config import CLERK_JWKS_URL, ROOT_DIR
+from dotenv import load_dotenv
+
+load_dotenv(ROOT_DIR / ".env")
 
 
 @lru_cache()

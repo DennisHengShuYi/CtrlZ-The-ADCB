@@ -54,8 +54,8 @@ export default function PaymentsPage() {
       if (compRes?.company?.base_currency) {
         setBaseCurrency(compRes.company.base_currency);
       }
-    } catch {
-      /* empty */
+    } catch (err: any) {
+      alert(err.message || "Failed to load payments data");
     }
     setLoading(false);
   }
@@ -68,8 +68,7 @@ export default function PaymentsPage() {
         return;
       }
       try {
-        const res = await fetch(`http://localhost:8000/api/currency/rate?from=${form.currency}&to=${baseCurrency}`);
-        const data = await res.json();
+        const data = await apiFetch(`/api/currency/rate?from=${form.currency}&to=${baseCurrency}`);
         if (active && data.rate) {
           setForm(f => ({ ...f, exchange_rate: data.rate }));
         }
@@ -81,8 +80,12 @@ export default function PaymentsPage() {
     return () => { active = false; };
   }, [form.currency, baseCurrency]);
 
+  const [isCreating, setIsCreating] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
+    setIsCreating(true);
     try {
       await apiFetch("/api/payments/", {
         method: "POST",
@@ -104,13 +107,22 @@ export default function PaymentsPage() {
       loadData();
     } catch (err: Error | any) {
       alert(err.message);
+    } finally {
+      setIsCreating(false);
     }
   }
 
   async function handleDelete(id: string) {
     if (!confirm("Delete this payment?")) return;
-    await apiFetch(`/api/payments/${id}`, { method: "DELETE" });
-    loadData();
+    setDeletingId(id);
+    try {
+      await apiFetch(`/api/payments/${id}`, { method: "DELETE" });
+      setPayments(prev => prev.filter(p => p.id !== id));
+    } catch (err: any) {
+      alert(err.message || "Failed to delete payment.");
+    } finally {
+      setDeletingId(null);
+    }
   }
 
   const totalPaid = payments.reduce(
@@ -181,8 +193,9 @@ export default function PaymentsPage() {
                   <td className="cell-truncate">{p.notes || "—"}</td>
                   <td>
                     <button
-                      className="btn-icon btn-icon-danger"
+                      className={`btn-icon btn-icon-danger ${deletingId === p.id ? 'opacity-50 cursor-not-allowed' : ''}`}
                       title="Delete"
+                      disabled={deletingId === p.id}
                       onClick={() => handleDelete(p.id)}
                     >
                       <Trash2 size={14} />
@@ -311,8 +324,8 @@ export default function PaymentsPage() {
                 >
                   Cancel
                 </button>
-                <button type="submit" className="btn-primary">
-                  Record Payment
+                <button type="submit" className="btn-primary" disabled={isCreating}>
+                  {isCreating ? "Recording…" : "Record Payment"}
                 </button>
               </div>
             </form>
