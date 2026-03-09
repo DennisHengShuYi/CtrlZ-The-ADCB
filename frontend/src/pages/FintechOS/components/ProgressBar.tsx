@@ -1,4 +1,3 @@
-import React from 'react';
 
 const ProgressBar = ({ label, value, max = 100, suffix = '%' }: any) => (
     <div style={{ marginBottom: '1.25rem' }}>
