@@ -1,3 +1,51 @@
+## Quick Terminal Commands (Backend + Frontend + AHTN)
+
+Run these from project root:
+
+### 1) Backend setup (first time)
+```bash
+cd backend
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+```
+
+### 2) Frontend setup (first time)
+```bash
+cd frontend
+npm install
+```
+
+### 3) Build AHTN vector database (one-time / when AHTN data changes)
+```bash
+cd backend
+source .venv/bin/activate
+python3 -m scripts.pillar2.build_ahtn_vector_db
+```
+
+### 4) Run backend (Terminal 1)
+```bash
+cd backend
+source .venv/bin/activate
+python3 -m app.main
+```
+
+### 5) Run frontend (Terminal 2)
+```bash
+cd frontend
+npm run dev
+```
+
+### 6) Optional AHTN tests
+```bash
+cd backend
+source .venv/bin/activate
+python3 -m scripts.pillar2.test_ahtn
+python3 -m scripts.pillar2.test_prevet
+python3 -m scripts.pillar2.test_prevet --all
+```
+
+---
 
 # FinanceFlow — Manual Run Guide
 
