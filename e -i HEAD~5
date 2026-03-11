@@ -1,0 +1,219 @@
+[33mcommit afc4dc385db854fc3f1a838c36d70b36b3666fa7[m[33m ([m[1;32mMerging[m[33m)[m
+Author: Darren Tan <darrentanthongen@gmail.com>
+Date:   Wed Mar 11 23:07:56 2026 +0800
+
+    Add detailed setup instructions for backend and frontend in README.md
+
+[33mcommit 47f51a73c6f4e4753d42111fbae0a24358d9a141[m
+Merge: 38c0a8a b1889e6
+Author: Darren Tan <darrentanthongen@gmail.com>
+Date:   Wed Mar 11 23:05:14 2026 +0800
+
+    Merge branch 'RAG' into Merging
+
+[33mcommit 38c0a8a2a9ab21c3bd6ab858cff95f1c504ef5d5[m[33m ([m[1;31morigin/minhan[m[33m)[m
+Author: hmmm <23005016@siswa.um.edu.my>
+Date:   Wed Mar 11 18:07:25 2026 +0800
+
+    Done
+
+[33mcommit 6d637f8569bf04461a0bb83abd52f4f45e6adc3c[m
+Author: hmmm <23005016@siswa.um.edu.my>
+Date:   Wed Mar 11 17:55:12 2026 +0800
+
+    Done
+
+[33mcommit b1889e6745ab10569752432155b35eb66d497490[m
+Author: Darren Tan <darrentanthongen@gmail.com>
+Date:   Wed Mar 11 16:56:23 2026 +0800
+
+    Improve error handling in InvoicePrevetPage by enhancing the error message formatting. Added detailed validation error messages based on response structure, ensuring clearer feedback for users.
+
+[33mcommit 987e6a83a8f423a575df07fd66d715bb768056d0[m
+Author: den51 <den519000@gmail.com>
+Date:   Tue Mar 10 14:33:01 2026 +0800
+
+    update loan readiness calculation
+
+[33mcommit cec0bdc735a8ba3f980b0bacac220030b047b874[m
+Author: den51 <den519000@gmail.com>
+Date:   Tue Mar 10 03:52:12 2026 +0800
+
+    Update after merging minhan
+
+[33mcommit 2bdb6d38de95f1b991262eef43c64f47f2bad274[m
+Author: den51 <den519000@gmail.com>
+Date:   Tue Mar 10 03:07:25 2026 +0800
+
+    merge
+
+[33mcommit 512e98ae71699765de3aee0da64f20a89c2e11a8[m
+Merge: a4b08e3 23ca809
+Author: den51 <den519000@gmail.com>
+Date:   Tue Mar 10 03:01:10 2026 +0800
+
+    Merge remote-tracking branch 'origin/minhan' into dennis
+
+[33mcommit a4b08e3a854c53cd07129b66e02ecfaa91ccf732[m
+Author: den51 <den519000@gmail.com>
+Date:   Tue Mar 10 02:22:58 2026 +0800
+
+    Add latest updates
+
+[33mcommit 23ca809d786c4ed78b547783626953a803465b17[m
+Author: hmmm <23005016@siswa.um.edu.my>
+Date:   Mon Mar 9 23:30:18 2026 +0800
+
+    settle inventory
+
+[33mcommit 001a50d1a84f7847f44e95c958ddec6fa0891367[m
+Author: den51 <den519000@gmail.com>
+Date:   Sun Mar 8 00:38:49 2026 +0800
+
+    Renew all the things
+
+[33mcommit 0690c59568d773757e7ac9e8717ff4fbc8eabf49[m
+Author: Darren Tan <darrentanthongen@gmail.com>
+Date:   Sat Mar 7 20:45:35 2026 +0800
+
+    Update demo invoices with revised pricing and currency changes. Adjusted unit prices and amounts for electronics, food and beverages, medical supplies, mixed goods, and textiles. Changed currency from USD to MYR across all invoices.
+
+[33mcommit 27265d864b38f5e590995e83e67e805d8cd5d2d6[m
+Author: Darren Tan <darrentanthongen@gmail.com>
+Date:   Sat Mar 7 20:30:42 2026 +0800
+
+    Enhance invoice processing with Supabase integration and add HITL review page. Update .env.example for Supabase configuration, modify API to save results to Supabase, and implement frontend routes for HITL review.
+
+[33mcommit 52ddbeeffbde083c1eaa45040d8a497c88608e5b[m
+Author: den51 <den519000@gmail.com>
+Date:   Sat Mar 7 20:12:34 2026 +0800
+
+    gg min han laptop broken
+
+[33mcommit 0927a6d4c0ad2e869eb06940355606365528af71[m[33m ([m[1;32mminhan[m[33m)[m
+Author: hmmm <23005016@siswa.um.edu.my>
+Date:   Sat Mar 7 19:31:46 2026 +0800
+
+    For Dennis
+
+[33mcommit 99fed111c9992c62e1097ffa5e5ac0c4ea289f9d[m
+Author: WongJo-Ey <joeywong821@gmail.com>
+Date:   Fri Mar 6 12:55:29 2026 +0800
+
+    Added Social Media Overview Dashboard
+
+[33mcommit abac6f296832780c501cc57940b21acbd7bdf702[m
+Merge: 1233dc0 bf4e6f7
+Author: hmmm <23005016@siswa.um.edu.my>
+Date:   Fri Mar 6 01:42:12 2026 +0800
+
+    Temporary Connect whatsapp to Dashboard
+
+[33mcommit 1233dc0583a5a9978b1c0bb7d7da88e0b37c344a[m
+Author: hmmm <23005016@siswa.um.edu.my>
+Date:   Thu Mar 5 19:56:56 2026 +0800
+
+    update
+
+[33mcommit bf4e6f7aa178bdae185e61be3cd837c6e8038ea4[m
+Author: WongJo-Ey <joeywong821@gmail.com>
+Date:   Thu Mar 5 15:38:22 2026 +0800
+
+    Full integration of WhatsApp & Instagram AI with Supabase storage and product knowledge
+
+[33mcommit dd56813060907464e3a45c903b3fa2bb53cbd102[m
+Author: WongJo-Ey <joeywong821@gmail.com>
+Date:   Thu Mar 5 11:29:37 2026 +0800
+
+    Merge origin/minhan into feature/pillar1-whatsapp
+
+[33mcommit 22f22734bb0f10de55fcee943610b6641deebed4[m
+Merge: 373c77d 6ec7326
+Author: WongJo-Ey <joeywong821@gmail.com>
+Date:   Thu Mar 5 11:22:17 2026 +0800
+
+    Merge origin/minhan into feature/pillar1-whatsapp
+
+[33mcommit 373c77d98b3e40f37d5862ff1a95431d56f7579a[m
+Author: WongJo-Ey <joeywong821@gmail.com>
+Date:   Wed Mar 4 23:47:16 2026 +0800
+
+    Done instagram & Whatsapp framework, ready for database connection
+
+[33mcommit 6ec7326748e2def4544d5bd214756c5881b6cb6d[m
+Author: hmmm <23005016@siswa.um.edu.my>
+Date:   Wed Mar 4 22:15:44 2026 +0800
+
+    temp push for Dennis
+
+[33mcommit cc02c70b0095b58dd71be27fe68b618b0215e6f6[m
+Author: hmmm <23005016@siswa.um.edu.my>
+Date:   Wed Mar 4 01:16:38 2026 +0800
+
+    chore: clean, format, and prepare full-stack codebase for initial push
+
+[33mcommit ccb0216c10376739efcfd26cc93a38495b909f14[m
+Author: Darren Tan <darrentanthongen@gmail.com>
+Date:   Wed Mar 4 00:17:40 2026 +0800
+
+    Add invoice pre-vet feature with API endpoint and frontend integration
+
+[33mcommit 76ed70411c6686a5d2081f35734a2f9092d36a3f[m
+Author: hmmm <23005016@siswa.um.edu.my>
+Date:   Tue Mar 3 01:42:14 2026 +0800
+
+    login
+
+[33mcommit c3b4fec856f8292cc7a3831770b352f10a327358[m
+Author: hmmm <23005016@siswa.um.edu.my>
+Date:   Tue Mar 3 01:42:14 2026 +0800
+
+    login
+
+[33mcommit 607b079ae3637fc7d10eaf00a741ff4fb518daf2[m
+Author: DennisHengShuYi <149782709+DennisHengShuYi@users.noreply.github.com>
+Date:   Mon Mar 2 01:13:13 2026 +0800
+
+    Create .gitignore
+
+[33mcommit 645c89a0e6ae63ecea89c1f93daea310adb26fe4[m
+Author: DennisHengShuYi <149782709+DennisHengShuYi@users.noreply.github.com>
+Date:   Mon Mar 2 01:13:13 2026 +0800
+
+    Create .gitignore
+
+[33mcommit 29648b1e962a9bdb588a753981db99697b72005a[m
+Author: DennisHengShuYi <149782709+DennisHengShuYi@users.noreply.github.com>
+Date:   Mon Mar 2 01:13:01 2026 +0800
+
+    Delete git.ignore
+
+[33mcommit 0f25605cc15521dccdd758dd0217ef925cec3b3e[m
+Author: DennisHengShuYi <149782709+DennisHengShuYi@users.noreply.github.com>
+Date:   Mon Mar 2 01:13:01 2026 +0800
+
+    Delete git.ignore
+
+[33mcommit eb050b95de78efdf839220f088f526a131db7790[m
+Author: DennisHengShuYi <149782709+DennisHengShuYi@users.noreply.github.com>
+Date:   Mon Mar 2 01:04:58 2026 +0800
+
+    Create git.ignore
+
+[33mcommit a73cfc86ac615f41332405241cf190836ab7c89c[m
+Author: DennisHengShuYi <149782709+DennisHengShuYi@users.noreply.github.com>
+Date:   Mon Mar 2 01:04:58 2026 +0800
+
+    Create git.ignore
+
+[33mcommit 5995a9bd28a7e8eb5591fe93c6d9f29d949deabf[m
+Author: DennisHengShuYi <149782709+DennisHengShuYi@users.noreply.github.com>
+Date:   Mon Mar 2 01:04:07 2026 +0800
+
+    Create README.md
+
+[33mcommit 7e3d842d3681ee26f1d9af6088054f8358e36524[m
+Author: DennisHengShuYi <149782709+DennisHengShuYi@users.noreply.github.com>
+Date:   Mon Mar 2 01:04:07 2026 +0800
+
+    Create README.md
