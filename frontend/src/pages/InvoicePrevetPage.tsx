@@ -69,7 +69,19 @@ export default function InvoicePrevetPage() {
       });
       if (!res.ok) {
         const err = await res.json().catch(() => ({ detail: res.statusText }));
-        throw new Error(err.detail || `Request failed: ${res.status}`);
+        const detail = err.detail;
+        let message: string;
+        if (Array.isArray(detail) && detail.length > 0) {
+          message = detail
+            .map((d: { loc?: unknown[]; msg?: string }) => {
+              const loc = Array.isArray(d.loc) ? d.loc.filter((x) => x !== "body").join(".") : "";
+              return loc ? `${loc}: ${d.msg ?? "validation error"}` : (d.msg ?? "validation error");
+            })
+            .join("; ");
+        } else {
+          message = typeof detail === "string" ? detail : `Request failed: ${res.status}`;
+        }
+        throw new Error(message);
       }
       const data: PreVetResult = await res.json();
       setResult(data);
