@@ -7,7 +7,6 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -333,19 +332,20 @@ export default function InvoicesPage() {
       </Card>
 
       <Dialog open={showModal} onOpenChange={setShowModal}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Create Invoice</DialogTitle>
-            <DialogDescription>Add a new invoice with line items.</DialogDescription>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto p-10 rounded-2xl shadow-xl border-muted bg-white">
+          <DialogHeader className="mb-8">
+            <DialogTitle className="text-2xl font-bold text-black">Create Invoice</DialogTitle>
+            <DialogDescription className="text-gray-500 text-sm font-medium">Add a new invoice with line items.</DialogDescription>
           </DialogHeader>
-          <form onSubmit={handleCreate} className="space-y-6">
-            <div className="grid grid-cols-2 gap-4">
+
+          <form onSubmit={handleCreate} className="space-y-8">
+            <div className="grid grid-cols-2 gap-x-10 gap-y-6">
               <div className="space-y-2">
-                <Label htmlFor="client">Client</Label>
+                <Label htmlFor="client" className="font-bold text-black">Client</Label>
                 <select
                   id="client"
                   required
-                  className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm"
+                  className="flex h-11 w-full rounded-md border border-gray-200 bg-white px-3 py-1 text-sm shadow-sm transition-colors focus:outline-none focus:ring-2 focus:ring-black/5"
                   value={form.client_id}
                   onChange={(e) => setForm({ ...form, client_id: e.target.value })}
                 >
@@ -355,12 +355,13 @@ export default function InvoicesPage() {
                   ))}
                 </select>
               </div>
+
               <div className="space-y-2">
-                <Label htmlFor="type">Type</Label>
+                <Label htmlFor="type" className="font-bold text-black">Type</Label>
                 <select
                   id="type"
                   required
-                  className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm"
+                  className="flex h-11 w-full rounded-md border border-gray-200 bg-white px-3 py-1 text-sm shadow-sm transition-colors focus:outline-none focus:ring-2 focus:ring-black/5"
                   value={form.type}
                   onChange={(e) => setForm({ ...form, type: e.target.value as "issuing" | "receiving" })}
                 >
@@ -368,29 +369,33 @@ export default function InvoicesPage() {
                   <option value="receiving">Receiving (Payable Bill)</option>
                 </select>
               </div>
+
               <div className="space-y-2">
-                <Label htmlFor="invoice_number">Invoice Number</Label>
-                <Input id="invoice_number" required placeholder="INV-001" value={form.invoice_number} onChange={(e) => setForm({ ...form, invoice_number: e.target.value })} />
+                <Label htmlFor="invoice_number" className="font-bold text-black">Invoice Number</Label>
+                <Input id="invoice_number" required placeholder="INV-001" className="h-11 border-gray-200 shadow-sm" value={form.invoice_number} onChange={(e) => setForm({ ...form, invoice_number: e.target.value })} />
               </div>
+
               <div className="space-y-2">
-                <Label htmlFor="date">Date</Label>
-                <Input id="date" type="date" required value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} />
+                <Label htmlFor="date" className="font-bold text-black">Date</Label>
+                <Input id="date" type="date" required className="h-11 border-gray-200 shadow-sm" value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} />
               </div>
+
               <div className="space-y-2">
-                <Label htmlFor="month">Month (YYYY-MM)</Label>
-                <Input id="month" required placeholder="2024-03" value={form.month} onChange={(e) => setForm({ ...form, month: e.target.value })} />
+                <Label htmlFor="month" className="font-bold text-black">Month (YYYY-MM)</Label>
+                <Input id="month" required placeholder="2026-03" className="h-11 border-gray-200 shadow-sm" value={form.month} onChange={(e) => setForm({ ...form, month: e.target.value })} />
               </div>
+
               <div className="space-y-2">
-                <Label htmlFor="currency">Currency</Label>
+                <Label htmlFor="currency" className="font-bold text-black">Currency</Label>
                 <select
                   id="currency"
-                  className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm"
+                  className="flex h-11 w-full rounded-md border border-gray-200 bg-white px-3 py-1 text-sm shadow-sm transition-colors focus:outline-none focus:ring-2 focus:ring-black/5"
                   value={form.currency}
                   onChange={(e) => setForm({ ...form, currency: e.target.value })}
                 >
+                  <option value="MYR">MYR (RM)</option>
                   <option value="USD">USD ($)</option>
                   <option value="EUR">EUR (€)</option>
-                  <option value="MYR">MYR (RM)</option>
                   <option value="SGD">SGD (S$)</option>
                   <option value="IDR">IDR (Rp)</option>
                   <option value="PHP">PHP (₱)</option>
@@ -399,48 +404,54 @@ export default function InvoicesPage() {
                   <option value="AED">AED</option>
                 </select>
               </div>
+
               <div className="space-y-2">
-                <Label htmlFor="exchange_rate">Exchange Rate</Label>
-                <Input id="exchange_rate" type="number" step="0.000001" min={0} required value={form.exchange_rate} onChange={(e) => setForm({ ...form, exchange_rate: parseFloat(e.target.value) || 1.0 })} />
-                {form.currency !== baseCurrency && (
-                  <p className="text-xs text-muted-foreground">Est. base: {new Intl.NumberFormat("en-US", { style: "currency", currency: baseCurrency }).format((totalAmount + (form.tariff || 0)) * form.exchange_rate)}</p>
-                )}
+                <Label htmlFor="exchange_rate" className="font-bold text-black">Exchange Rate</Label>
+                <Input id="exchange_rate" type="number" step="0.000001" min={0} required className="h-11 border-gray-200 shadow-sm" value={form.exchange_rate} onChange={(e) => setForm({ ...form, exchange_rate: parseFloat(e.target.value) || 1.0 })} />
               </div>
+
               <div className="space-y-2">
-                <Label htmlFor="tariff">Customs Tariff / Duty</Label>
-                <Input id="tariff" type="number" step="0.01" min={0} value={form.tariff} onChange={(e) => setForm({ ...form, tariff: parseFloat(e.target.value) || 0 })} />
+                <Label htmlFor="tariff" className="font-bold text-black">Customs Tariff / Duty</Label>
+                <Input id="tariff" type="number" step="0.01" min={0} className="h-11 border-gray-200 shadow-sm" value={form.tariff} onChange={(e) => setForm({ ...form, tariff: parseFloat(e.target.value) || 0 })} />
               </div>
             </div>
 
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <h3 className="text-sm font-medium">Line Items</h3>
-                <Button type="button" variant="outline" size="sm" onClick={addItem}>
-                  <Plus size={14} /> Add Item
+            <div className="pt-8 border-t border-gray-700">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-base font-bold text-black">Line Items</h3>
+                <Button type="button" variant="outline" size="sm" className="h-9 font-medium shadow-sm px-4" onClick={addItem}>
+                  <Plus size={16} className="mr-1" /> Add Item
                 </Button>
               </div>
-              {items.map((item, idx) => (
-                <div key={idx} className="flex gap-2 items-center">
-                  <Input className="flex-2" placeholder="Description" required value={item.description} onChange={(e) => updateItem(idx, "description", e.target.value)} />
-                  <Input className="w-24" type="number" step="0.01" min={0} placeholder="Price" required value={item.price || ""} onChange={(e) => updateItem(idx, "price", e.target.value)} />
-                  <Input className="w-20" type="number" min={1} placeholder="Qty" required value={item.quantity || ""} onChange={(e) => updateItem(idx, "quantity", e.target.value)} />
-                  {items.length > 1 && (
-                    <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => removeItem(idx)}>
-                      <X size={14} />
-                    </Button>
-                  )}
-                </div>
-              ))}
-              <div className="flex justify-end gap-4 pt-2 border-t font-semibold">
-                <span>Grand Total:</span>
-                <span>{new Intl.NumberFormat("en-US", { style: "currency", currency: form.currency || "USD" }).format(totalAmount + (form.tariff || 0))}</span>
+              <div className="space-y-4">
+                {items.map((item, idx) => (
+                  <div key={idx} className="flex gap-4 items-center">
+                    <Input className="flex-1 h-11 border-gray-200 shadow-sm" placeholder="Description" required value={item.description} onChange={(e) => updateItem(idx, "description", e.target.value)} />
+                    <Input className="w-40 h-11 border-gray-200 shadow-sm" type="number" step="0.01" min={0} placeholder="Price" required value={item.price || ""} onChange={(e) => updateItem(idx, "price", e.target.value)} />
+                    <Input className="w-24 h-11 border-gray-200 shadow-sm" type="number" min={1} placeholder="1" required value={item.quantity || ""} onChange={(e) => updateItem(idx, "quantity", e.target.value)} />
+                    {items.length > 1 && (
+                      <Button type="button" variant="ghost" size="icon" className="h-11 w-11 text-gray-300 hover:text-destructive shrink-0" onClick={() => removeItem(idx)}>
+                        <X size={18} />
+                      </Button>
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              <div className="mt-8 pt-4 border-t border-gray-700 text-right">
+                <span className="text-gray-600 text-base font-medium mr-3">Grand Total:</span>
+                <span className="text-black text-xl font-bold tabular-nums">
+                  {form.currency || "MYR"} {(totalAmount + (form.tariff || 0)).toFixed(2)}
+                </span>
               </div>
             </div>
 
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setShowModal(false)}>Cancel</Button>
-              <Button type="submit" disabled={isCreating}>{isCreating ? "Creating…" : "Create Invoice"}</Button>
-            </DialogFooter>
+            <div className="flex justify-end gap-3 pt-8 border-t border-gray-700">
+              <Button type="button" variant="outline" className="h-11 px-6 font-semibold border-gray-200 shadow-sm bg-white" onClick={() => setShowModal(false)}>Cancel</Button>
+              <Button type="submit" className="h-11 px-8 font-semibold bg-black text-white hover:bg-black/90 shadow-sm" disabled={isCreating}>
+                {isCreating ? "Creating…" : "Create Invoice"}
+              </Button>
+            </div>
           </form>
         </DialogContent>
       </Dialog>
