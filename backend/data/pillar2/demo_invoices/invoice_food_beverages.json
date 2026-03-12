@@ -23,11 +23,11 @@
     },
     {
       "item_id": 2,
-      "description": "Fresh durian, Musang King, whole fruit",
-      "quantity": 200,
-      "unit": "kg",
-      "unit_price": 45.00,
-      "amount": 9000.00,
+      "description": "Premium Honey Pomelo, large",
+      "quantity": 300,
+      "unit": "pcs",
+      "unit_price": 12.00,
+      "amount": 3600.00,
       "origin_country": "MY"
     },
     {
@@ -40,7 +40,7 @@
       "origin_country": "MY"
     }
   ],
-  "subtotal": 11505.00,
+  "subtotal": 6105.00,
   "currency": "MYR",
   "notes": "FOB Port Klang"
 }
