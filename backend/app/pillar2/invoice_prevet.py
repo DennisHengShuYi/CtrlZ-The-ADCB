@@ -204,6 +204,7 @@ def pre_vet_invoice(invoice: dict[str, Any]) -> dict[str, Any]:
         "invoice_id": invoice.get("invoice_id", ""),
         "line_items": classified,
         "total_tariff": round(total_tariff, 2),
+        "currency": invoice.get("currency", "MYR"),
         "any_requires_hitl": any_requires_hitl,
         "all_flags": list(dict.fromkeys(all_flags)),
     }

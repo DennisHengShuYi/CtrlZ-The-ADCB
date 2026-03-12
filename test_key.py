@@ -11,7 +11,7 @@ print(f"Testing key: {api_key[:10]}...{api_key[-5:]}")
 try:
     client = genai.Client(api_key=api_key)
     response = client.models.generate_content(
-        model="gemini-2.0-flash",
+        model="gemini-2.5-flash",
         contents="Hello, this is a test.",
     )
     print("SUCCESS: Key is working!")

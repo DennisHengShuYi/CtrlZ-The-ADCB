@@ -38,6 +38,7 @@ interface PreVetResult {
   invoice_id: string;
   line_items: PreVetLineItem[];
   total_tariff: number;
+  currency: string;
   any_requires_hitl: boolean;
   all_flags: string[];
 }
@@ -333,7 +334,7 @@ export default function InvoicePrevetPage() {
                   <CardContent className="p-5">
                     <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Est. Total Tariff</p>
                     <p className="text-2xl font-bold mt-2 tabular-nums">
-                      RM {result.total_tariff.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                      {result.currency} {result.total_tariff.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                     </p>
                   </CardContent>
                 </Card>
@@ -389,7 +390,7 @@ export default function InvoicePrevetPage() {
                           <TableHead className="text-[10px] uppercase font-bold min-w-[200px]">Product Description</TableHead>
                           <TableHead className="text-[10px] uppercase font-bold min-w-[140px]">AHTN Code</TableHead>
                           <TableHead className="text-[10px] uppercase font-bold text-right">Tax Rate</TableHead>
-                          <TableHead className="text-[10px] uppercase font-bold text-right">Duty (RM)</TableHead>
+                          <TableHead className="text-[10px] uppercase font-bold text-right">Duty ({result.currency})</TableHead>
                           <TableHead className="text-[10px] uppercase font-bold text-center">Confidence</TableHead>
                           <TableHead className="text-[10px] uppercase font-bold pr-6 text-center">HITL</TableHead>
                         </TableRow>

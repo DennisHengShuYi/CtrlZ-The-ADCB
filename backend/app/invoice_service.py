@@ -160,7 +160,7 @@ def _safe_date(raw) -> str:
     return str(today)
 
 
-def create_invoice(invoice_data: dict, items: list[dict], background_tasks: BackgroundTasks = None) -> dict:
+def create_invoice(invoice_data: dict, items: list[dict], background_tasks: BackgroundTasks = None, save_items: bool = True) -> dict:
     # Calculate total
     total = sum(Decimal(str(item["price"])) * item["quantity"] for item in items)
 
@@ -172,6 +172,9 @@ def create_invoice(invoice_data: dict, items: list[dict], background_tasks: Back
 
     invoice_type = invoice_data.get("type", "issuing")
 
+    tariff = Decimal(str(invoice_data.get("tariff", 0.0)))
+    total_amount = total + tariff
+
     payload = {
         "client_id": invoice_data["client_id"],
         "invoice_number": invoice_data["invoice_number"],
@@ -180,7 +183,8 @@ def create_invoice(invoice_data: dict, items: list[dict], background_tasks: Back
         "currency": invoice_data.get("currency", "MYR"),
         "type": invoice_type,
         "exchange_rate": str(Decimal(str(invoice_data.get("exchange_rate", 1.0)))),
-        "total_amount": str(total),
+        "tariff": str(tariff),
+        "total_amount": str(total_amount),
         "notes": invoice_data.get("notes"),
     }
 
@@ -193,66 +197,140 @@ def create_invoice(invoice_data: dict, items: list[dict], background_tasks: Back
     client = get_client(invoice["client_id"])
     company_id = client["company_id"] if client else None
 
-    # Insert items + link to products + sync inventory
-    for item in items:
-        item_desc = item.get("description", "")
-        item_qty = item.get("quantity", 0)
+    if save_items:
+        # Insert items + link to products + sync inventory
+        for item in items:
+            item_desc = item.get("description", "")
+            item_qty = item.get("quantity", 0)
 
-        # Match item to a product in the database
-        matched_product = None
-        if company_id:
-            matched_product = get_product_by_name(company_id, item_desc)
+            # Match item to a product in the database
+            matched_product = None
+            if company_id:
+                matched_product = get_product_by_name(company_id, item_desc)
 
-        item_payload = {
-            "invoice_id": invoice["id"],
-            "description": item_desc,
-            "price": str(Decimal(str(item["price"]))),
-            "quantity": item_qty,
-        }
-        if item.get("unit"):
-            item_payload["unit"] = item["unit"]
-        if item.get("origin_country"):
-            item_payload["origin_country"] = item["origin_country"]
-        if item.get("unit_price") is not None:
-            item_payload["unit_price"] = str(Decimal(str(item["unit_price"])))
+            item_payload = {
+                "invoice_id": invoice["id"],
+                "description": item_desc,
+                "price": str(Decimal(str(item["price"]))),
+                "quantity": item_qty,
+            }
+            if item.get("unit"):
+                item_payload["unit"] = item["unit"]
+            if item.get("origin_country"):
+                item_payload["origin_country"] = item["origin_country"]
+            if item.get("unit_price") is not None:
+                item_payload["unit_price"] = str(Decimal(str(item["unit_price"])))
 
-        # Link product_id if matched
-        if matched_product:
-            item_payload["product_id"] = matched_product["id"]
+            # Link product_id if matched
+            if matched_product:
+                item_payload["product_id"] = matched_product["id"]
 
-        insert_result = supabase.table("invoice_items").insert(item_payload).execute()
-        if not insert_result.data:
-            print(f"WARNING: Failed to insert invoice item: {item_payload}")
+            insert_result = supabase.table("invoice_items").insert(item_payload).execute()
+            if not insert_result.data:
+                print(f"WARNING: Failed to insert invoice item: {item_payload}")
 
-        # ── Inventory Sync ──
-        # issuing (sale to customer)  -> decrement stock
-        # receiving (purchase from supplier) -> increment stock
-        if matched_product and item_qty > 0:
-            if invoice_type == "issuing":
-                delta = -item_qty
-            elif invoice_type == "receiving":
-                delta = +item_qty
-            else:
-                delta = 0
-
-            if delta != 0:
-                new_val = adjust_product_inventory(matched_product["id"], delta)
+            if not matched_product and company_id:
                 print(
-                    f"[Inventory] Matched '{item_desc}' to Product ID {matched_product['id'][:8]}... "
-                    f"({invoice_type} x{item_qty}) -> New Stock: {new_val}"
+                    f"[Inventory] WARNING: No product match for '{item_desc}'. Consider mapping it."
                 )
-        elif not matched_product and company_id:
-            print(
-                f"[Inventory] WARNING: No product match for '{item_desc}' — "
-                f"inventory not updated. Consider creating this product."
-            )
 
-    # Trigger auto-payment evaluation for receiving invoices
-    if invoice_type == "receiving" and client:
-        if background_tasks:
-            background_tasks.add_task(evaluate_auto_payment, invoice["id"], invoice["client_id"], company_id)
+    # ── HITL Routing ──
+    # Ensure cross-border invoices (non-MYR) are queued for HITL/Tariff calc
+    if invoice.get("currency", "MYR").upper() != "MYR" and background_tasks:
+        # Pass items directly if they weren't saved to DB
+        items_payload = items if not save_items else None
+        background_tasks.add_task(_trigger_hitl_prevet, invoice["id"], items_payload)
 
     return get_invoice(invoice["id"])
+
+
+def _trigger_hitl_prevet(invoice_id: str, items_override: list[dict] = None):
+    """
+    Background task to run AHTN classification on an invoice and push it to HITL queue.
+    """
+    from app.pillar2.invoice_prevet import pre_vet_invoice
+    from app.supabase_client import save_prevet_result
+    
+    # 1. Fetch full invoice details
+    res = supabase.table("invoices").select("*").eq("id", invoice_id).execute()
+    if not res.data:
+        print(f"[HITL] Error: Invoice {invoice_id} not found.")
+        return
+    invoice = res.data[0]
+    invoice_num = invoice.get("invoice_number", "")
+
+    # 1b. DO NOT trigger if already in HITL queue
+    existing = supabase.table("invoice_prevet_results").select("id").eq("invoice_id", invoice_num).execute()
+    if existing.data:
+        return
+
+    # 2. Get line items (either from arg or DB)
+    if items_override:
+        db_items = items_override
+    else:
+        items_res = supabase.table("invoice_items").select("*").eq("invoice_id", invoice_id).execute()
+        db_items = items_res.data or []
+    
+    if not db_items:
+        print(f"[HITL] Error: No line items found for invoice {invoice_id}.")
+        return
+
+    # 2. Get Client and Company details
+    client = get_client(invoice["client_id"])
+    company_id = client["company_id"] if client else None
+    
+    company = None
+    if company_id:
+        c_res = supabase.table("user_companies").select("*").eq("id", company_id).execute()
+        if c_res.data:
+            company = c_res.data[0]
+    
+    # 3. Construct the 'Invoice' schema for pre_vet_invoice
+    invoice_type = invoice.get("type", "issuing")
+    
+    comp_data = {
+        "name": company.get("name", "Unknown Company") if company else "Unknown Company",
+        "address": company.get("address", "Unknown Address") if company else "Unknown Address",
+        "country": "MY" 
+    }
+    client_data = {
+        "name": client.get("name", "Unknown Client") if client else "Unknown Client",
+        "address": client.get("address", "Unknown Address") if client else "Unknown Address",
+        "country": client.get("country", "SG") if client else "SG"
+    }
+
+    line_items = []
+    for it in db_items:
+        line_items.append({
+            "item_id": it.get("id", "temp_id"),
+            "description": it["description"],
+            "quantity": it["quantity"],
+            "unit": it.get("unit", "pcs"),
+            "unit_price": float(it.get("unit_price", it.get("price", 0))),
+            "amount": float(it.get("amount", float(it.get("price", 0)) * it["quantity"]))
+        })
+
+    inv_dict = {
+        "invoice_id": invoice_num,
+        "date": str(invoice["date"]),
+        "type": invoice_type,
+        "seller": comp_data if invoice_type == "issuing" else client_data,
+        "buyer": client_data if invoice_type == "issuing" else comp_data,
+        "line_items": line_items,
+        "total_amount": float(invoice["total_amount"]),
+        "subtotal": sum(li["amount"] for li in line_items),
+        "currency": invoice.get("currency", "MYR"),
+        "notes": invoice.get("notes", "")
+    }
+    
+    # 4. Run Pre-vet
+    try:
+        result = pre_vet_invoice(inv_dict)
+        # 5. Save to HITL queue
+        source_label = "WhatsApp Order" if "WhatsApp" in inv_dict.get("notes", "") else "Manual Entry"
+        save_prevet_result(inv_dict, result, source_file=source_label)
+    except Exception as e:
+        print(f"[HITL] Failed to trigger pre-vet for invoice {invoice_id}: {e}")
 
 
 # ═══════════════════════════════════════════
@@ -323,26 +401,27 @@ def adjust_product_inventory(product_id: str, delta: int) -> Optional[int]:
     return new_val
 
 
-def get_invoices(company_id: str) -> list[dict]:
-    # Get clients for this company
-    clients = get_clients(company_id)
-    if not clients:
-        return []
-
+def get_invoices(company_id: str, background_tasks=None) -> list[dict]:
+    # 1. Fetch clients for this company
+    clients = supabase.table("clients").select("id, name").eq("company_id", company_id).execute().data
     client_ids = [c["id"] for c in clients]
     client_map = {c["id"]: c["name"] for c in clients}
 
-    result = (
-        supabase.table("invoices")
-        .select("*")
-        .in_("client_id", client_ids)
-        .order("created_at", desc=True)
-        .execute()
-    )
+    if not client_ids:
+        return []
 
-    invoices = result.data
+    # 2. Fetch invoices for these clients
+    invoices = supabase.table("invoices").select("*").in_("client_id", client_ids).order("date", desc=True).execute().data or []
+
+    # 3. Fetch HITL statuses from invoice_prevet_results
+    invoice_nums = [inv["invoice_number"] for inv in invoices]
+    hitl_res = supabase.table("invoice_prevet_results").select("invoice_id, status").in_("invoice_id", invoice_nums).execute().data or []
+    hitl_map = {r["invoice_id"]: r["status"] for r in hitl_res}
+
+    # 4. Map client names and HITL status
     for inv in invoices:
         inv["client_name"] = client_map.get(inv["client_id"], "Unknown")
+        inv["hitl_status"] = hitl_map.get(inv["invoice_number"], "approved") 
 
     return invoices
 
@@ -374,6 +453,13 @@ def get_invoice(invoice_id: str) -> Optional[dict]:
 
 
 def update_invoice_status(invoice_id: str, status: str) -> dict:
+    current = supabase.table("invoices").select("status, type").eq("id", invoice_id).execute()
+    if not current.data:
+        raise HTTPException(status_code=404, detail="Invoice not found.")
+    
+    current_status = current.data[0].get("status", "unpaid")
+    invoice_type = current.data[0].get("type", "issuing")
+
     result = (
         supabase.table("invoices")
         .update({"status": status})
@@ -382,6 +468,21 @@ def update_invoice_status(invoice_id: str, status: str) -> dict:
     )
     if not result.data:
         raise HTTPException(status_code=400, detail="Database operation failed or returned no data.")
+        
+    # Deduct inventory ONLY when invoice shifts to "paid" status
+    if status == "paid" and current_status != "paid":
+        items = supabase.table("invoice_items").select("*").eq("invoice_id", invoice_id).execute().data or []
+        for item in items:
+            product_id = item.get("product_id")
+            if not product_id:
+                continue
+            qty = int(item.get("quantity", 0))
+            if qty > 0:
+                delta = -qty if invoice_type == "issuing" else qty
+                if delta != 0:
+                    new_val = adjust_product_inventory(product_id, delta)
+                    print(f"[Inventory] Paid -> Updated product {product_id[:8]} by {delta}. New stock: {new_val}")
+
     return result.data[0]
 
 

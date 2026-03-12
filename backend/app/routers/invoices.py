@@ -33,9 +33,12 @@ async def _ensure_company(claims: dict) -> tuple[str, dict]:
 
 
 @router.get("/")
-async def list_invoices(claims: dict[str, Any] = Depends(require_auth)):
+async def list_invoices(
+    background_tasks: BackgroundTasks,
+    claims: dict[str, Any] = Depends(require_auth)
+):
     company_id, _ = await _ensure_company(claims)
-    return {"invoices": get_invoices(company_id)}
+    return {"invoices": get_invoices(company_id, background_tasks=background_tasks)}
 
 
 @router.get("/{invoice_id}")

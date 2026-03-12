@@ -7,10 +7,10 @@ api_key = os.getenv("GEMINI_API_KEY")
 client = genai.Client(api_key=api_key)
 
 models_to_try = [
-    "gemini-2.0-flash-lite",
+    "gemini-2.5-flash-lite",
     "gemini-flash-latest",
     "gemini-pro-latest",
-    "gemini-2.0-flash"
+    "gemini-2.5-flash"
 ]
 
 for m in models_to_try:

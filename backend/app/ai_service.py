@@ -1,5 +1,5 @@
 """
-AI Service — uses Google Gen AI (Gemini 2.0 Flash) to extract invoice data.
+AI Service — uses Google Gen AI (Gemini 2.5 Flash) to extract invoice data.
 Migrated from google-generativeai to google-genai.
 """
 
@@ -133,7 +133,7 @@ async def extract_invoice_data(message: str) -> dict:
     """
     try:
         response = client.models.generate_content(
-            model="gemini-2.0-flash",
+            model="gemini-2.5-flash",
             contents=message,
             config=types.GenerateContentConfig(
                 system_instruction=get_system_prompt(),
@@ -169,7 +169,7 @@ If the document has multiple pages, extract the summary/total information from t
 Return valid JSON exactly matching these keys. If a field is not found or ambiguous, return null for that field. Do not include markdown formatting.
 """
         response = client.models.generate_content(
-            model="gemini-2.0-flash",
+            model="gemini-2.5-flash",
             contents=[
                 types.Part.from_bytes(data=image_bytes, mime_type=mime_type),
                 system_prompt,
@@ -215,7 +215,7 @@ Return a JSON object:
 Do not include markdown formatting.
 """
         response = client.models.generate_content(
-            model="gemini-2.0-flash",
+            model="gemini-2.5-flash",
             contents=[
                 types.Part.from_bytes(data=image_bytes, mime_type=mime_type),
                 system_prompt,
@@ -261,7 +261,7 @@ Detect base currency accurately (e.g., MYR, USD).
 Do not include markdown formatting.
 """
         response = client.models.generate_content(
-            model="gemini-2.0-flash",
+            model="gemini-2.5-flash",
             contents=[
                 types.Part.from_bytes(data=image_bytes, mime_type=mime_type),
                 system_prompt,
@@ -301,7 +301,7 @@ Write a short, friendly WhatsApp-style rejection/apology message that:
 Return ONLY the message text, no JSON formatting."""
 
         response = client.models.generate_content(
-            model="gemini-2.0-flash",
+            model="gemini-2.5-flash",
             contents=system_prompt,
             config=types.GenerateContentConfig(
                 temperature=0.3,
@@ -366,7 +366,7 @@ Return JSON EXACTLY matching:
 No markdown.
         """
         response = client.models.generate_content(
-            model="gemini-2.0-flash",
+            model="gemini-2.5-flash",
             contents=system_prompt,
             config=types.GenerateContentConfig(
                 temperature=0.1,

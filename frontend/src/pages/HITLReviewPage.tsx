@@ -60,8 +60,10 @@ interface PreVetResult {
 
 interface Invoice {
   invoice_id: string;
-  invoice_date: string;
-  vendor: { name: string; address: string; country: string };
+  invoice_date?: string;
+  date?: string;
+  vendor?: { name: string; address: string; country: string };
+  seller?: { name: string; address: string; country: string };
   buyer: { name: string; address: string; country: string };
   line_items: Array<{
     item_id: number;
@@ -157,9 +159,9 @@ export default function HITLReviewPage() {
   const approvedCount = items.filter((i) => i.status === "approved").length;
 
   return (
-    <div className="page-container" style={{ maxWidth: "1400px", width: "100%" }}>
+    <div className="page-container" style={{ maxWidth: "1600px", width: "100%" }}>
       {/* ── Header ─────────────────────────────────────────────────── */}
-      <div className="page-header items-center mb-10">
+      <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-6">
         <div className="flex items-center gap-4">
           <Link to="/dashboard/invoice-prevet">
             <Button variant="ghost" size="sm" className="hover:bg-primary/5 gap-2">
@@ -187,26 +189,49 @@ export default function HITLReviewPage() {
           {loading ? "Syncing..." : "Sync Queue"}
         </Button>
       </div>
-
       <div className="space-y-10">
         {/* ── Stats Row ───────────────────────────────────────────── */}
         {!loading && items.length > 0 && (
-          <div className="grid grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8">
             {[
-              { label: "Total Records", value: totalCount, icon: <FileText size={24} />, color: "text-indigo-600", iconBg: "bg-indigo-50 text-indigo-500", border: "border-l-indigo-400", bg: "bg-indigo-50/40" },
-              { label: "Pending Review", value: pendingCount, icon: <Clock size={24} />, color: "text-amber-600", iconBg: "bg-amber-50 text-amber-500", border: "border-l-amber-400", bg: "bg-amber-50/40" },
-              { label: "Approved", value: approvedCount, icon: <CheckCircle2 size={24} />, color: "text-green-600", iconBg: "bg-green-50 text-green-500", border: "border-l-green-400", bg: "bg-green-50/40" },
+              {
+                label: "Total Records",
+                value: totalCount,
+                icon: <FileText size={22} />,
+                color: "text-indigo-600",
+                iconBg: "bg-indigo-50 text-indigo-500",
+                border: "border-l-indigo-500",
+                bg: "bg-white"
+              },
+              {
+                label: "Pending Review",
+                value: pendingCount,
+                icon: <Clock size={22} />,
+                color: "text-amber-600",
+                iconBg: "bg-amber-50 text-amber-500",
+                border: "border-l-amber-500",
+                bg: "bg-white"
+              },
+              {
+                label: "Approved",
+                value: approvedCount,
+                icon: <CheckCircle2 size={22} />,
+                color: "text-green-600",
+                iconBg: "bg-green-50 text-green-500",
+                border: "border-l-green-500",
+                bg: "bg-white"
+              },
             ].map(({ label, value, icon, color, iconBg, border, bg }) => (
               <div
                 key={label}
-                className={`${bg} rounded-2xl border border-border border-l-4 shadow-sm min-h-[150px] flex flex-col p-8 transition-all hover:shadow-md ${border}`}
+                className={`${bg} rounded-2xl border border-border border-l-[6px] shadow-sm flex flex-col p-6 transition-all hover:shadow-md hover:-translate-y-1 duration-300 ${border}`}
               >
-                <div className="flex justify-between items-start mb-auto">
-                  <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground/80">{label}</p>
-                  <div className={`p-2.5 rounded-xl ${iconBg} ring-4 ring-white`}>{icon}</div>
+                <div className="flex justify-between items-center mb-4">
+                  <p className="text-[11px] font-bold uppercase tracking-[0.15em] text-muted-foreground/70">{label}</p>
+                  <div className={`p-2 rounded-xl ${iconBg}`}>{icon}</div>
                 </div>
-                <div className="mt-4">
-                  <p className={`text-3xl font-black tabular-nums tracking-tight ${color}`}>{value}</p>
+                <div>
+                  <p className={`text-4xl font-extrabold tabular-nums tracking-tighter ${color}`}>{value}</p>
                 </div>
               </div>
             ))}
@@ -244,10 +269,10 @@ export default function HITLReviewPage() {
 
         {/* ── Queue Items ─────────────────────────────────────────── */}
         {items.length > 0 && (
-          <div className="flex flex-col gap-10 mt-10">
+          <div className="flex flex-col gap-8 mt-4">
             {items.map(({ id, invoice, pre_vet, source_file, status }) => {
               const isExpanded = expandedId === invoice.invoice_id || expandedId === id;
-              const hitlItems = pre_vet.line_items.filter((i) => i.requires_hitl);
+              const hitlItems = (pre_vet?.line_items || []).filter((i) => i.requires_hitl);
               const hitlCount = hitlItems.length;
               const isApproved = status === "approved";
               const canApprove = !!id && !isApproved;
@@ -269,7 +294,7 @@ export default function HITLReviewPage() {
                   >
                     {/* ── Collapsible Trigger / Card Header ─────── */}
                     <CollapsibleTrigger asChild>
-                      <CardHeader className="cursor-pointer py-7 px-10 select-none">
+                      <CardHeader className="cursor-pointer py-6 px-8 select-none">
                         <div className="flex items-center justify-between w-full gap-4">
                           {/* Left: Icon + Info */}
                           <div className="flex items-center gap-4 min-w-0">
@@ -294,11 +319,11 @@ export default function HITLReviewPage() {
                                 )}
                               </div>
                               <div className="flex items-center gap-1.5 mt-1 text-xs text-muted-foreground">
-                                <span className="truncate max-w-[120px]">{invoice.vendor.name}</span>
+                                <span className="truncate max-w-[120px]">{(invoice.vendor || invoice.seller)?.name || "Unknown"}</span>
                                 <ArrowRight size={9} className="shrink-0 opacity-40" />
-                                <span className="truncate max-w-[120px] font-semibold text-foreground/70">{invoice.buyer.name}</span>
+                                <span className="truncate max-w-[120px] font-semibold text-foreground/70">{(invoice.buyer || {}).name || "Unknown"}</span>
                                 <span className="opacity-30 mx-0.5">•</span>
-                                <span className="font-bold text-foreground/60 tabular-nums">{invoice.currency} {invoice.subtotal.toLocaleString()}</span>
+                                <span className="font-bold text-foreground/60 tabular-nums">{invoice.currency || "MYR"} {(invoice.subtotal || 0).toLocaleString()}</span>
                               </div>
                             </div>
                           </div>
@@ -307,7 +332,7 @@ export default function HITLReviewPage() {
                           <div className="flex items-center gap-4 shrink-0 border-l pl-4 text-muted-foreground">
                             <div className="hidden sm:flex flex-col items-end">
                               <span className="text-[9px] uppercase font-bold tracking-widest opacity-40">Date</span>
-                              <span className="text-xs font-semibold">{invoice.invoice_date}</span>
+                              <span className="text-xs font-semibold">{invoice.invoice_date || invoice.date}</span>
                             </div>
                             {isExpanded
                               ? <ChevronDown size={18} className="text-primary" />
@@ -320,39 +345,40 @@ export default function HITLReviewPage() {
 
                     {/* ── Expanded Content ───────────────────────── */}
                     <CollapsibleContent>
-                      <CardContent className="border-t border-border/70 p-12 space-y-12">
-                        <div className="grid grid-cols-1 lg:grid-cols-12 gap-14">
+                      <CardContent className="border-t border-border/70 p-8 lg:p-10 space-y-12 bg-slate-50/30">
+                        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 xl:gap-16">
 
                           {/* Sidebar: Details + Approve */}
                           <div className="lg:col-span-4 space-y-6">
                             {/* Details panel */}
-                            <div className="rounded-2xl bg-muted/20 border p-10 space-y-8">
+                            <div className="rounded-2xl bg-white border p-8 space-y-8 shadow-sm">
                               <div>
-                                <h4 className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground flex items-center gap-2 mb-6">
-                                  <FileText size={12} /> Invoice Details
+                                <h4 className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground flex items-center gap-2 mb-6 px-1">
+                                  <FileText size={12} className="text-primary/60" /> Invoice Metadata
                                 </h4>
                               </div>
                               <div className="space-y-6">
-                                <div className="space-y-2">
-                                  <p className="text-[10px] uppercase font-bold text-muted-foreground/60 tracking-widest">Source File</p>
-                                  <p className="font-semibold italic text-xs leading-relaxed break-all text-foreground/80" title={source_file}>
-                                    {source_file?.split("/").pop()}
+                                <div className="space-y-2 px-1">
+                                  <p className="text-[10px] uppercase font-bold text-muted-foreground/60 tracking-widest">Filename</p>
+                                  <p className="font-semibold text-xs leading-relaxed break-all text-foreground/80 flex items-center gap-2" title={source_file}>
+                                    <FileText size={12} className="shrink-0 opacity-40" />
+                                    {source_file?.split(/[\/\\]/).pop()}
                                   </p>
                                 </div>
-                                <div className="space-y-3 pt-6 border-t border-border/50">
-                                  <p className="text-[10px] uppercase font-bold text-muted-foreground/60 tracking-widest">Pricing & Currency</p>
-                                  <div className="flex items-center gap-3 mt-2">
-                                    <Badge variant="secondary" className="text-xs px-3 py-1 font-bold">{invoice.currency}</Badge>
+                                <div className="space-y-3 pt-6 border-t border-border/50 px-1">
+                                  <p className="text-[10px] uppercase font-bold text-muted-foreground/60 tracking-widest">Base Currency</p>
+                                  <div className="flex items-center gap-3">
+                                    <Badge variant="outline" className="text-xs px-3 py-1 font-bold bg-primary/5 border-primary/20 text-primary">{invoice.currency || "MYR"}</Badge>
                                   </div>
                                 </div>
-                                <div className="space-y-4 pt-6 border-t border-border/50">
+                                <div className="space-y-4 pt-6 border-t border-border/50 bg-slate-50/50 -mx-8 px-9 py-6 rounded-b-2xl mt-4">
                                   <div className="flex justify-between items-center text-sm">
-                                    <span className="text-xs font-semibold text-muted-foreground">Total Tariff</span>
-                                    <span className="font-bold text-primary tabular-nums">RM {pre_vet.total_tariff.toFixed(2)}</span>
+                                    <span className="text-xs font-medium text-muted-foreground">Estimated Duty</span>
+                                    <span className="font-bold text-primary tabular-nums">{invoice.currency || "MYR"} {(pre_vet?.total_tariff || 0).toFixed(2)}</span>
                                   </div>
                                   <div className="flex justify-between items-center text-sm">
-                                    <span className="text-xs font-semibold text-muted-foreground">Subtotal</span>
-                                    <span className="font-bold tabular-nums">{invoice.currency} {invoice.subtotal.toLocaleString()}</span>
+                                    <span className="text-xs font-medium text-muted-foreground">Invoice Value</span>
+                                    <span className="font-bold tabular-nums">{invoice.currency || "MYR"} {(invoice.subtotal || 0).toLocaleString()}</span>
                                   </div>
                                 </div>
                               </div>
@@ -382,13 +408,13 @@ export default function HITLReviewPage() {
                             )}
 
                             {/* Flags */}
-                            {pre_vet.all_flags.length > 0 && (
+                            {pre_vet?.all_flags?.length > 0 && (
                               <div className="mt-4 rounded-2xl bg-amber-50/60 border border-amber-200 p-7 space-y-4">
                                 <p className="text-xs font-bold uppercase tracking-widest text-amber-800 flex items-center gap-2">
                                   <AlertCircle size={12} /> Active Flags
                                 </p>
                                 <ul className="space-y-3">
-                                  {pre_vet.all_flags.map((f, i) => (
+                                  {(pre_vet?.all_flags || []).map((f, i) => (
                                     <li key={i} className="flex gap-2.5 text-xs text-amber-800 font-medium leading-relaxed">
                                       <span className="text-amber-400 shrink-0 mt-0.5">•</span>{f}
                                     </li>
@@ -404,7 +430,7 @@ export default function HITLReviewPage() {
                               <h4 className="font-bold flex items-center gap-3">
                                 Classification Checklist
                                 <Badge variant="secondary" className="bg-muted text-[10px] font-bold px-2.5 py-1">
-                                  {pre_vet.line_items.length} ITEMS
+                                  {(pre_vet?.line_items || []).length} ITEMS
                                 </Badge>
                                 {hitlCount > 0 && (
                                   <Badge className="bg-amber-100 text-amber-700 border-amber-200 text-[10px] font-bold px-2.5 py-1">
@@ -414,36 +440,36 @@ export default function HITLReviewPage() {
                               </h4>
                             </div>
 
-                            <div className="rounded-3xl border border-border/50 overflow-hidden shadow-sm bg-white">
+                            <div className="rounded-2xl border border-border/60 overflow-hidden shadow-md bg-white">
                               <div className="overflow-x-auto">
-                                <Table className="table-fixed w-full">
-                                  <TableHeader className="bg-muted/30">
+                                <Table className="w-full min-w-[800px]">
+                                  <TableHeader className="bg-slate-50/80">
                                     <TableRow className="hover:bg-transparent border-b border-border/50">
-                                      <TableHead className="w-[6%] pl-8 py-6 text-[10px] uppercase font-black tracking-widest text-muted-foreground/70">ID</TableHead>
-                                      <TableHead className="w-[35%] px-6 py-6 text-[10px] uppercase font-black tracking-widest text-muted-foreground/70">Item Description</TableHead>
-                                      <TableHead className="w-[12%] px-6 py-6 text-[10px] uppercase font-black tracking-widest text-muted-foreground/70">Qty / Unit</TableHead>
-                                      <TableHead className="w-[22%] px-6 py-6 text-[10px] uppercase font-black tracking-widest text-muted-foreground/70">AHTN Classification</TableHead>
-                                      <TableHead className="w-[10%] text-right px-6 py-6 text-[10px] uppercase font-black tracking-widest text-muted-foreground/70">Rate</TableHead>
-                                      <TableHead className="w-[10%] text-right px-8 py-6 text-[10px] uppercase font-black tracking-widest text-muted-foreground/70">Duty</TableHead>
-                                      <TableHead className="w-[5%] text-center px-4 py-6 text-[10px] uppercase font-black tracking-widest text-muted-foreground/70"></TableHead>
+                                      <TableHead className="w-[60px] pl-6 py-5 text-[10px] uppercase font-bold tracking-widest text-muted-foreground/60">Pos</TableHead>
+                                      <TableHead className="min-w-[280px] px-4 py-5 text-[10px] uppercase font-bold tracking-widest text-muted-foreground/60">Line Item Description</TableHead>
+                                      <TableHead className="w-[100px] px-4 py-5 text-[10px] uppercase font-bold tracking-widest text-muted-foreground/60">Qty / Unit</TableHead>
+                                      <TableHead className="w-[240px] px-4 py-5 text-[10px] uppercase font-bold tracking-widest text-muted-foreground/60">HS Code Classification</TableHead>
+                                      <TableHead className="w-[80px] text-right px-4 py-5 text-[10px] uppercase font-bold tracking-widest text-muted-foreground/60">Rate</TableHead>
+                                      <TableHead className="w-[100px] text-right px-6 py-5 text-[10px] uppercase font-bold tracking-widest text-muted-foreground/60">Duty ({invoice.currency || "MYR"})</TableHead>
+                                      <TableHead className="w-[80px] text-center px-4 py-5 text-[10px] uppercase font-bold tracking-widest text-muted-foreground/60">Status</TableHead>
                                     </TableRow>
                                   </TableHeader>
                                   <TableBody>
-                                    {pre_vet.line_items.map((item) => (
+                                    {(pre_vet?.line_items || []).map((item) => (
                                       <TableRow
                                         key={item.item_id}
                                         className={`group transition-colors border-b border-border/30 last:border-0 ${
                                           item.requires_hitl ? "bg-amber-50/30 hover:bg-amber-50/50" : "hover:bg-muted/5"
                                         }`}
                                       >
-                                        <TableCell className="pl-8 pr-4 font-mono text-[10px] text-muted-foreground/50 font-black align-middle">{item.item_id}</TableCell>
-                                        <TableCell className="px-6 py-6">
-                                          <div className="space-y-2">
-                                            <span className="font-bold text-sm text-foreground/90 block leading-snug">{item.description}</span>
+                                        <TableCell className="pl-6 pr-2 font-mono text-[10px] text-muted-foreground/40 font-medium align-middle">{item.item_id}</TableCell>
+                                        <TableCell className="px-4 py-5">
+                                          <div className="space-y-1.5">
+                                            <span className="font-semibold text-sm text-foreground/90 block leading-snug">{item.description}</span>
                                             {item.flags.length > 0 && (
-                                              <div className="flex flex-wrap gap-2">
+                                              <div className="flex flex-wrap gap-1.5 pt-0.5">
                                                 {item.flags.map((f, i) => (
-                                                  <span key={i} className="text-[8px] px-2 py-0.5 bg-background border border-amber-200 text-amber-700 rounded-md font-black uppercase tracking-tighter">
+                                                  <span key={i} className="text-[9px] px-1.5 py-0.5 bg-amber-50 border border-amber-200/50 text-amber-700 rounded-md font-bold uppercase tracking-tight">
                                                     {f}
                                                   </span>
                                                 ))}
@@ -451,24 +477,30 @@ export default function HITLReviewPage() {
                                             )}
                                           </div>
                                         </TableCell>
-                                        <TableCell className="px-6 py-6 text-xs font-bold tabular-nums text-muted-foreground align-middle">
-                                          {item.quantity} <span className="text-[10px] opacity-60 uppercase">{item.unit}</span>
-                                        </TableCell>
-                                        <TableCell className="px-6 py-6 align-middle">
-                                          <div className="space-y-2">
-                                            <code className="text-[10px] font-black bg-primary/10 text-primary px-2 py-0.5 rounded-md border border-primary/10">{item.ahtn_code}</code>
-                                            <p className="text-[10px] text-muted-foreground leading-tight line-clamp-2" title={item.ahtn_description}>{item.ahtn_description}</p>
+                                        <TableCell className="px-4 py-5 text-xs font-medium tabular-nums text-muted-foreground/80 align-middle">
+                                          <div className="flex flex-col">
+                                            <span>{item.quantity}</span>
+                                            <span className="text-[9px] opacity-60 uppercase font-bold">{item.unit}</span>
                                           </div>
                                         </TableCell>
-                                        <TableCell className="text-right px-6 py-6 text-xs font-black tabular-nums align-middle text-muted-foreground">{item.tariff_rate}</TableCell>
-                                        <TableCell className="text-right px-8 py-6 font-black tabular-nums text-sm align-middle text-foreground">
+                                        <TableCell className="px-4 py-5 align-middle">
+                                          <div className="space-y-1.5">
+                                            <div className="flex items-center gap-2">
+                                              <span className="text-[10px] font-bold bg-primary text-primary-foreground px-1.5 py-0.5 rounded shadow-sm">HS</span>
+                                              <code className="text-xs font-bold text-primary tracking-tight">{item.ahtn_code}</code>
+                                            </div>
+                                            <p className="text-[10px] text-muted-foreground leading-relaxed line-clamp-2 max-w-[220px]" title={item.ahtn_description}>{item.ahtn_description}</p>
+                                          </div>
+                                        </TableCell>
+                                        <TableCell className="text-right px-4 py-5 text-xs font-semibold tabular-nums align-middle text-muted-foreground">{item.tariff_rate}</TableCell>
+                                        <TableCell className="text-right px-6 py-5 font-bold tabular-nums text-sm align-middle text-foreground">
                                           {item.tariff_amount.toFixed(2)}
                                         </TableCell>
-                                        <TableCell className="text-center px-4 py-6 align-middle">
+                                        <TableCell className="text-center px-4 py-5 align-middle">
                                           {item.requires_hitl ? (
-                                            <Badge className="bg-amber-500 text-white border-0 text-[10px] font-black h-6 w-10 flex justify-center p-0 rounded-md shadow-sm">FIX</Badge>
+                                            <Badge className="bg-amber-500 hover:bg-amber-600 text-white border-0 text-[10px] font-black h-5 px-2 rounded-full cursor-help shadow-sm" title="Human Review Needed">REVIEW</Badge>
                                           ) : (
-                                            <div className="bg-green-100 text-green-600 rounded-full h-6 w-6 flex items-center justify-center mx-auto border border-green-200/50">
+                                            <div className="bg-green-500/10 text-green-600 rounded-full h-5 w-5 flex items-center justify-center mx-auto border border-green-500/20 shadow-inner">
                                               <CheckCircle2 size={12} strokeWidth={3} />
                                             </div>
                                           )}

@@ -107,8 +107,9 @@ def save_prevet_result(invoice: dict, pre_vet: dict, source_file: str | None = N
     if not sb:
         return None
 
-    any_hitl = pre_vet.get("any_requires_hitl", False)
-    status = "pending_review" if any_hitl else "approved"
+    # Only route cross-border (non-MYR) invoices to HITL for tariff calculation
+    currency = invoice.get("currency", "MYR").upper()
+    status = "pending_review" if currency != "MYR" else "approved"
 
     row = {
         "invoice_id": pre_vet.get("invoice_id", ""),
@@ -155,13 +156,31 @@ def get_hitl_queue(include_approved: bool = True) -> list[dict]:
 
 
 def approve_prevet_result(record_id: str, reviewed_by: str) -> bool:
-    """Mark a pre-vet result as approved. Only updates pending_review records."""
+    """
+    Mark a pre-vet result as approved.
+    Syncs the approved tariff from pre_vet_result back to the 'invoices' table.
+    Only updates pending_review records.
+    """
     sb = get_supabase()
     if not sb:
         return False
 
     from datetime import datetime, timezone
+    from decimal import Decimal
 
+    # 1. Fetch the record to get tariff and invoice identifier
+    res = sb.table("invoice_prevet_results").select("*").eq("id", record_id).execute()
+    if not res.data:
+        return False
+    
+    record = res.data[0]
+    pre_vet = record.get("pre_vet_result", {})
+    invoice_data = record.get("invoice_data", {})
+    
+    invoice_num = invoice_data.get("invoice_id") # This is 'invoice_id' in pillar2 schema, maps to 'invoice_number' in DB
+    total_tariff = Decimal(str(pre_vet.get("total_tariff", 0.0)))
+
+    # 2. Update the pre-vet result status
     now = datetime.now(timezone.utc).isoformat()
     r = (
         sb.table("invoice_prevet_results")
@@ -178,4 +197,27 @@ def approve_prevet_result(record_id: str, reviewed_by: str) -> bool:
         .execute()
     )
 
-    return bool(r.data and len(r.data) > 0)
+    if not r.data:
+        return False
+
+    # 3. Sync to main invoices table
+    # We match by invoice_number. 
+    # Note: In a production system, we'd use a more robust link like invoice_id/PK.
+    inv_res = sb.table("invoices").select("id, total_amount, tariff").eq("invoice_number", invoice_num).execute()
+    if inv_res.data:
+        inv = inv_res.data[0]
+        inv_id = inv["id"]
+        
+        # Calculate new total = (old_total - old_tariff) + new_tariff
+        old_total = Decimal(str(inv.get("total_amount", 0.0)))
+        old_tariff = Decimal(str(inv.get("tariff", 0.0)))
+        new_total = (old_total - old_tariff) + total_tariff
+        
+        sb.table("invoices").update({
+            "tariff": str(total_tariff),
+            "total_amount": str(new_total)
+        }).eq("id", inv_id).execute()
+        
+        print(f"[HITL] Synced tariff {total_tariff} to invoice {invoice_num}. New total: {new_total}")
+
+    return True

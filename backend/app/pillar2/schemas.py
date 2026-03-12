@@ -61,5 +61,6 @@ class PreVetResult(BaseModel):
     invoice_id: str
     line_items: list[ClassifiedLineItem]
     total_tariff: float
+    currency: str
     any_requires_hitl: bool
     all_flags: list[str] = Field(default_factory=list)

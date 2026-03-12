@@ -9,7 +9,7 @@ print(f"Testing key: {key[:10]}...")
 client = genai.Client(api_key=key)
 try:
     response = client.models.generate_content(
-        model="gemini-1.5-flash",
+        model="gemini-2.5-flash",
         contents="Say hello"
     )
     print("SUCCESS:", response.text)

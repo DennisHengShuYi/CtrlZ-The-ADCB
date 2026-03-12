@@ -42,7 +42,9 @@ interface Invoice {
   currency?: string;
   type?: "issuing" | "receiving";
   ai_auto_paid_reason?: string;
+  tariff?: number;
   items?: InvoiceItem[];
+  hitl_status?: "pending_review" | "approved";
 }
 
 interface Client {
@@ -67,6 +69,7 @@ export default function InvoicesPage() {
     type: "issuing",
     currency: "MYR",
     exchange_rate: 1.0,
+    tariff: 0,
   });
   const [isCreating, setIsCreating] = useState(false);
   const [items, setItems] = useState<InvoiceItem[]>([
@@ -133,6 +136,7 @@ export default function InvoicesPage() {
         type: "issuing",
         currency: "MYR",
         exchange_rate: 1.0,
+        tariff: 0,
       });
       setItems([{ description: "", price: 0, quantity: 1 }]);
       loadData();
@@ -256,6 +260,7 @@ export default function InvoicesPage() {
                   <TableHead>Client</TableHead>
                   <TableHead>Direction</TableHead>
                   <TableHead>Date</TableHead>
+                  <TableHead>Tariff</TableHead>
                   <TableHead>Amount</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
@@ -274,6 +279,9 @@ export default function InvoicesPage() {
                       )}
                     </TableCell>
                     <TableCell>{inv.date}</TableCell>
+                    <TableCell className="font-medium tabular-nums text-muted-foreground">
+                      {new Intl.NumberFormat("en-US", { style: "currency", currency: inv.currency || "USD" }).format(inv.tariff || 0)}
+                    </TableCell>
                     <TableCell className={`font-medium tabular-nums ${inv.type === "receiving" ? "text-red-600" : "text-green-600"}`}>
                       {inv.type === "receiving" ? "-" : "+"}
                       {new Intl.NumberFormat("en-US", { style: "currency", currency: inv.currency || "USD" }).format(parseFloat(String(inv.total_amount)))}
@@ -281,14 +289,21 @@ export default function InvoicesPage() {
                     <TableCell>
                       <div className="flex items-center gap-2">
                         <select
-                          className="h-8 rounded-md border border-input bg-background px-2 text-sm"
+                          className={`h-8 rounded-md border border-input bg-background px-2 text-sm ${inv.hitl_status === 'pending_review' ? 'opacity-50 cursor-not-allowed bg-muted' : ''}`}
                           value={inv.status}
+                          disabled={inv.hitl_status === 'pending_review'}
                           onChange={(e) => handleStatusChange(inv.id, e.target.value)}
+                          title={inv.hitl_status === 'pending_review' ? "Disabled: Awaiting HITL/Tariff Approval" : ""}
                         >
                           <option value="unpaid">Unpaid</option>
                           <option value="paid">Paid</option>
                           <option value="partially_paid">Partial</option>
                         </select>
+                        {inv.hitl_status === 'pending_review' && (
+                          <Badge variant="outline" className="text-[10px] uppercase border-amber-200 text-amber-600 bg-amber-50">
+                            HITL Pending
+                          </Badge>
+                        )}
                         {inv.ai_auto_paid_reason && (
                           <Badge variant="secondary" className="text-xs bg-blue-50 text-blue-700 border-blue-200 cursor-help" title={inv.ai_auto_paid_reason}>
                             🤖 AI Auto-Paid
@@ -388,8 +403,12 @@ export default function InvoicesPage() {
                 <Label htmlFor="exchange_rate">Exchange Rate</Label>
                 <Input id="exchange_rate" type="number" step="0.000001" min={0} required value={form.exchange_rate} onChange={(e) => setForm({ ...form, exchange_rate: parseFloat(e.target.value) || 1.0 })} />
                 {form.currency !== baseCurrency && (
-                  <p className="text-xs text-muted-foreground">Est. base: {new Intl.NumberFormat("en-US", { style: "currency", currency: baseCurrency }).format(totalAmount * form.exchange_rate)}</p>
+                  <p className="text-xs text-muted-foreground">Est. base: {new Intl.NumberFormat("en-US", { style: "currency", currency: baseCurrency }).format((totalAmount + (form.tariff || 0)) * form.exchange_rate)}</p>
                 )}
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="tariff">Customs Tariff / Duty</Label>
+                <Input id="tariff" type="number" step="0.01" min={0} value={form.tariff} onChange={(e) => setForm({ ...form, tariff: parseFloat(e.target.value) || 0 })} />
               </div>
             </div>
 
@@ -413,8 +432,8 @@ export default function InvoicesPage() {
                 </div>
               ))}
               <div className="flex justify-end gap-4 pt-2 border-t font-semibold">
-                <span>Total:</span>
-                <span>{new Intl.NumberFormat("en-US", { style: "currency", currency: form.currency || "USD" }).format(totalAmount)}</span>
+                <span>Grand Total:</span>
+                <span>{new Intl.NumberFormat("en-US", { style: "currency", currency: form.currency || "USD" }).format(totalAmount + (form.tariff || 0))}</span>
               </div>
             </div>
 

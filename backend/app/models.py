@@ -66,6 +66,7 @@ class InvoiceCreate(BaseModel):
     type: str = Field("issuing", pattern="^(issuing|receiving)$")
     currency: str = "MYR"
     exchange_rate: Decimal = Decimal("1.0")
+    tariff: Decimal = Decimal("0.0")
     items: list[InvoiceItemCreate]
     notes: Optional[str] = None
 
@@ -95,6 +96,7 @@ class InvoiceOut(BaseModel):
     type: str = "issuing"
     currency: str = "MYR"
     exchange_rate: Decimal = Decimal("1.0")
+    tariff: Decimal = Decimal("0.0")
     created_at: datetime
     items: list[InvoiceItemOut] = []
     client_name: Optional[str] = None

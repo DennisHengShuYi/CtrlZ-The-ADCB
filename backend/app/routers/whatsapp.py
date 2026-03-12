@@ -549,11 +549,12 @@ async def whatsapp_webhook(
         "currency": invoice_currency,
         "type": "issuing",
         "exchange_rate": str(exchange_rate),
-        "notes": notes,
+        "notes": (notes + " (Order via WhatsApp)") if notes else "Order via WhatsApp",
+        "tariff": 0,
     }
 
     # create_invoice with type="issuing" automatically decrements inventory
-    invoice = create_invoice(invoice_data, items, background_tasks)
+    invoice = create_invoice(invoice_data, items, background_tasks, save_items=True)
 
     if not invoice:
         agent_steps.append("ERROR: Failed to create customer invoice (PGRST204)")

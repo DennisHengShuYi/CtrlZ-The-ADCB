@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useUser } from '@clerk/clerk-react';
 import { useApiFetch } from '../../hooks/useApiFetch';
 import { ShieldCheck, CheckCircle2, Globe, TrendingUp } from 'lucide-react';
@@ -87,7 +87,7 @@ const PassportPage = () => {
             // Platinum: only count customer invoices (invoice_number starts with 'M') in a non-MYR currency
             hasInternational = invoices.some(inv =>
                 inv.invoice_number &&
-                inv.invoice_number.toUpperCase().startsWith('M') &&
+                (inv.invoice_number.toUpperCase().startsWith('M') || inv.invoice_number.toUpperCase().startsWith('INV')) &&
                 inv.currency &&
                 inv.currency.toUpperCase() !== 'MYR'
             );
@@ -116,7 +116,7 @@ const PassportPage = () => {
                     const conversionRate = rates[inv.currency] || 1;
                     amount = amount * conversionRate;
                 }
-                const isIssuing = inv.invoice_number && inv.invoice_number.toUpperCase().startsWith('M');
+                const isIssuing = inv.invoice_number && (inv.invoice_number.toUpperCase().startsWith('M') || inv.invoice_number.toUpperCase().startsWith('INV'));
                 if (!monthlyBreakdown[month]) monthlyBreakdown[month] = { customerInv: 0, supplierInv: 0, beforePayroll: 0, afterPayroll: 0 };
                 if (isIssuing) {
                     monthlyCashFlow[month] = (monthlyCashFlow[month] || 0) + amount;

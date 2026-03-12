@@ -74,6 +74,7 @@ CREATE TABLE public.invoices (
   created_at timestamp with time zone DEFAULT now(),
   currency text DEFAULT 'USD'::text,
   exchange_rate numeric DEFAULT 1.0,
+  tariff numeric DEFAULT 0,
   type text DEFAULT 'issuing'::text CHECK (type = ANY (ARRAY['issuing'::text, 'receiving'::text])),
   ai_auto_paid_reason text,
   notes text,

@@ -176,13 +176,19 @@ def generate_invoice_pdf(invoice: dict, company: dict | None = None) -> bytes:
     elements.append(Spacer(1, 10 * mm))
 
     # ── Total Box ──
+    subtotal = sum(Decimal(str(item.get("price", 0))) * item.get("quantity", 0) for item in items)
+    tariff = Decimal(str(invoice.get("tariff", 0)))
     total = Decimal(str(invoice.get("total_amount", 0)))
     currency = invoice.get('currency', 'USD')
     
-    total_data = [
-        [f"{currency} :", f"{total:,.2f}"]
-    ]
-    total_table = Table(total_data, colWidths=[20*mm, 35*mm])
+    total_data = []
+    if tariff > 0:
+        total_data.append([f"Subtotal ({currency}):", f"{subtotal:,.2f}"])
+        total_data.append([f"Tariff / Duty ({currency}):", f"{tariff:,.2f}"])
+    
+    total_data.append([f"TOTAL ({currency}):", f"{total:,.2f}"])
+
+    total_table = Table(total_data, colWidths=[40*mm, 35*mm])
     total_table.setStyle(TableStyle([
         ("FONTNAME", (0, 0), (-1, -1), "Helvetica-Bold"),
         ("FONTSIZE", (0, 0), (-1, -1), 12),
