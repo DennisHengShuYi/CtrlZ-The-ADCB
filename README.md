@@ -3,11 +3,7 @@
 ## 1. General Description
 
 ### What our project does
-**FinanceFlow** is an advanced financial operating system designed for Small and Medium Enterprises (SMEs). It bridges the gap between daily operations and financial readiness by automating:
-- **Smart Invoicing**: AI-powered classification and tracking of issuing/receiving invoices.
-- **Fintech OS**: Real-time analytics for loan readiness, AI-generated CTOS credit reports, and automated business registration (SSM).
-- **Compliance & Customs**: A specialized **Human-in-the-Loop (HITL)** system for precise Harmonized System (AHTN) tariff classification, ensuring cross-border trade compliance.
-- **AI Integration**: Leverages Google Gemini for deep financial analysis and vector databases for high-speed tariff matching.
+FinanceFlow is an AI‑driven orchestration layer built on four pillars that transform how ASEAN's MSMEs interact with finance and trade. The Automated Performance Ledger captures sales and market interest directly from WhatsApp, Instagram, and payment platforms using Google Gemini for NLP, powering AI‑driven customer conversations that auto‑reply based on database records, with product details automatically extracted from Instagram captions to keep responses accurate and up‑to‑date. The Liability Shield combines Retrieval-Augmented Generation (RAG) with the official ASEAN Harmonized Tariff Nomenclature (AHTN) database and a Human-in-the-Loop (HITL) review system to ensure accurate cross‑border compliance. The Digital Formalization Bridge automates business registration with SSM and NIB once revenue thresholds are met. The Regional Capability Passport aggregates verified data into a Digital Maturity Index (DMI), a trust score recognised by ASEAN central banks that signals loan readiness, compliance health, and global trade capability to financial institutions. Powered by Google Gemini, OpenAI, and Supabase, FinanceFlow turns previously invisible businesses into verifiable, bankable entities ready for regional growth.
 
 ### SDG Addressed
 - **Goal 8: Decent Work and Economic Growth** — FinanceFlow empowers SMEs (the backbone of the economy) by providing them with the financial transparency and creditworthiness data needed to access capital and grow sustainably.
