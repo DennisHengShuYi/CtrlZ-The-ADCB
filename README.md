@@ -47,7 +47,7 @@ GEMINI_API_KEY=your_key
 ### Database Setup
 FinanceFlow supports two modes: **Full Cloud (Supabase)** or **Local (SQLite)**.
 
-#### Option A: Supabase (Recommended for Production)
+#### Supabase (Recommended for Production)
 1. Create a new project on [Supabase](https://supabase.com/).
 2. Open the **SQL Editor** in your Supabase dashboard.
 3. Copy the content of `backend/supabase_full_setup.sql`.
@@ -55,10 +55,7 @@ FinanceFlow supports two modes: **Full Cloud (Supabase)** or **Local (SQLite)**.
 5. Update your `.env` with your Supabase URL and Service Role Key.
 6. Set `USE_SUPABASE=true`.
 
-#### Option B: Local Mode (For Development/Offline)
-1. Set `USE_SUPABASE=false` in your `.env`.
-2. The system will automatically create and seed a local SQLite database (`backend/app/fintech.db`) with mock data when you start the server.
-3. No manual database setup is required for this mode.
+
 
 ### Backend Setup
 ```bash
