@@ -269,7 +269,7 @@ export default function HITLReviewPage() {
 
         {/* ── Queue Items ─────────────────────────────────────────── */}
         {items.length > 0 && (
-          <div className="flex flex-col gap-8 mt-10">
+          <div className="flex flex-col gap-8 mt-16">
             {items.map(({ id, invoice, pre_vet, source_file, status }) => {
               const isExpanded = expandedId === invoice.invoice_id || expandedId === id;
               const hitlItems = (pre_vet?.line_items || []).filter((i) => i.requires_hitl);
