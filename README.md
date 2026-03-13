@@ -41,7 +41,7 @@ GEMINI_API_KEY=your_key
 ```
 
 ### Database Setup
-FinanceFlow supports two modes: **Full Cloud (Supabase)** .
+FinanceFlow supports **Full Cloud (Supabase)** .
 
 #### Supabase (Recommended for Production)
 1. Create a new project on [Supabase](https://supabase.com/).
